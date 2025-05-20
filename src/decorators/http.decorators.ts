@@ -41,10 +41,10 @@ interface IApiAuthOptions extends IApiOptions<Type<any>> {
 export const ApiPublic = (options: IApiPublicOptions = {}): MethodDecorator => {
   const defaultStatusCode = HttpStatus.OK;
   const defaultErrorResponses = [
-    HttpStatus.BAD_REQUEST,
-    HttpStatus.FORBIDDEN,
-    HttpStatus.NOT_FOUND,
-    HttpStatus.UNPROCESSABLE_ENTITY,
+    // HttpStatus.BAD_REQUEST,
+    // HttpStatus.FORBIDDEN,
+    // HttpStatus.NOT_FOUND,
+    // HttpStatus.UNPROCESSABLE_ENTITY,
     HttpStatus.INTERNAL_SERVER_ERROR,
   ];
   const isPaginated = options.isPaginated || false;
@@ -75,11 +75,11 @@ export const ApiPublic = (options: IApiPublicOptions = {}): MethodDecorator => {
 export const ApiAuth = (options: IApiAuthOptions = {}): MethodDecorator => {
   const defaultStatusCode = HttpStatus.OK;
   const defaultErrorResponses = [
-    HttpStatus.BAD_REQUEST,
-    HttpStatus.UNAUTHORIZED,
-    HttpStatus.FORBIDDEN,
-    HttpStatus.NOT_FOUND,
-    HttpStatus.UNPROCESSABLE_ENTITY,
+    // HttpStatus.BAD_REQUEST,
+    // HttpStatus.UNAUTHORIZED,
+    // HttpStatus.FORBIDDEN,
+    // HttpStatus.NOT_FOUND,
+    // HttpStatus.UNPROCESSABLE_ENTITY,
     HttpStatus.INTERNAL_SERVER_ERROR,
   ];
   const isPaginated = options.isPaginated || false;

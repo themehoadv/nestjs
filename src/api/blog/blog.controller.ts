@@ -1,5 +1,6 @@
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
+import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
 import {
   Body,
@@ -54,8 +55,11 @@ export class BlogController {
     type: BlogResDto,
     summary: 'Create blog',
   })
-  async create(@Body() reqDto: CreateBlogReqDto) {
-    return this.blogService.create(reqDto);
+  async create(
+    @Body() reqDto: CreateBlogReqDto,
+    @CurrentUser('id') userId: Uuid,
+  ) {
+    return this.blogService.create(reqDto, userId);
   }
 
   @Patch(':id')
@@ -67,8 +71,9 @@ export class BlogController {
   async update(
     @Param('id', ParseUUIDPipe) id: Uuid,
     @Body() reqDto: UpdateBlogReqDto,
+    @CurrentUser('id') userId: Uuid,
   ) {
-    return this.blogService.update(id, reqDto);
+    return this.blogService.update(id, reqDto, userId);
   }
 
   @Delete(':id')

@@ -5,6 +5,8 @@ import { AllConfigType } from '@/config/config.type';
 import { Environment } from '@/constants/app.constant';
 import databaseConfig from '@/database/config/database.config';
 import { TypeOrmConfigService } from '@/database/typeorm-config.service';
+import mailConfig from '@/mail/config/mail.config';
+import { MailModule } from '@/mail/mail.module';
 import { ModuleMetadata } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -23,7 +25,7 @@ function generateModulesSet() {
   const imports: ModuleMetadata['imports'] = [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, authConfig],
+      load: [appConfig, databaseConfig, authConfig, mailConfig],
       envFilePath: ['.env'],
     }),
   ];
@@ -70,7 +72,13 @@ function generateModulesSet() {
     },
     inject: [ConfigService],
   });
-  const customModules = [dbModule, loggerModule, ApiModule, i18nModule];
+  const customModules = [
+    dbModule,
+    loggerModule,
+    ApiModule,
+    i18nModule,
+    MailModule,
+  ];
   return imports.concat(customModules);
 }
 

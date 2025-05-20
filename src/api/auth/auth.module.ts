@@ -1,5 +1,6 @@
 // import { QueueName, QueuePrefix } from '@/constants/job.constant';
 // import { BullModule } from '@nestjs/bullmq';
+import { MailModule } from '@/mail/mail.module';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -13,6 +14,7 @@ import { AuthService } from './auth.service';
     UserModule,
     TypeOrmModule.forFeature([UserEntity]),
     JwtModule.register({}),
+    MailModule,
     // BullModule.registerQueue({
     //   name: QueueName.EMAIL,
     //   prefix: QueuePrefix.AUTH,

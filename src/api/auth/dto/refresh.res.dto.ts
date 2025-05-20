@@ -1,10 +1,10 @@
-import { NumberField, StringField } from '@/decorators/field.decorators';
+import { NumberField, TokenField } from '@/decorators/field.decorators';
 
 export class RefreshResDto {
-  @StringField()
+  @TokenField()
   accessToken!: string;
 
-  @StringField()
+  @TokenField()
   refreshToken!: string;
 
   @NumberField()

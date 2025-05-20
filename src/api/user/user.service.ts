@@ -76,7 +76,7 @@ export class UserService {
 
   async findOne(id: Uuid): Promise<UserResDto> {
     assert(id, 'id is required');
-    const user = await this.userRepository.findOneByOrFail({ id });
+    const user = await UserEntity.findOneByOrFail({ id });
 
     return user.toDto(UserResDto);
   }

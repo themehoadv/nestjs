@@ -1,4 +1,8 @@
-import { NumberField, StringField } from '@/decorators/field.decorators';
+import {
+  NumberField,
+  StringField,
+  TokenField,
+} from '@/decorators/field.decorators';
 import { Exclude, Expose } from 'class-transformer';
 
 @Exclude()
@@ -8,11 +12,11 @@ export class LoginResDto {
   userId!: string;
 
   @Expose()
-  @StringField()
+  @TokenField()
   accessToken!: string;
 
   @Expose()
-  @StringField()
+  @TokenField()
   refreshToken!: string;
 
   @Expose()

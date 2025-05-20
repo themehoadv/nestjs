@@ -1,7 +1,9 @@
+import { Uuid } from '@/common/types/common.type';
 import { AllConfigType } from '@/config/config.type';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
+import { MailService } from '@/mail/mail.service';
 import { verifyPassword } from '@/utils/password.util';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
@@ -15,12 +17,14 @@ import { Repository } from 'typeorm';
 import { SessionEntity } from '../user/entities/session.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import {
+  ForgotPasswordResDto,
   LoginReqDto,
   LoginResDto,
   RefreshReqDto,
   RefreshResDto,
   RegisterReqDto,
   RegisterResDto,
+  ResetPasswordResDto,
 } from './dto/index';
 import { JwtPayloadType } from './types/jwt-payload.type';
 import { JwtRefreshPayloadType } from './types/jwt-refresh-payload.type';
@@ -33,6 +37,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    private readonly mailService: MailService,
     // @InjectQueue(QueueName.EMAIL)
     // private readonly emailQueue: Queue<IEmailJob, any, string>,
     // @Inject(CACHE_MANAGER)
@@ -41,7 +46,8 @@ export class AuthService {
 
   async signIn(dto: LoginReqDto): Promise<LoginResDto> {
     const { email, password } = dto;
-    const user = await this.userRepository.findOne({
+
+    const user = await UserEntity.findOne({
       where: { email },
       select: ['id', 'email', 'password'],
     });
@@ -80,9 +86,10 @@ export class AuthService {
   }
 
   async register(dto: RegisterReqDto): Promise<RegisterResDto> {
-    // Check if the user already exists
+    const { email, password } = dto;
+
     const isExistUser = await UserEntity.exists({
-      where: { email: dto.email },
+      where: { email },
     });
 
     if (isExistUser) {
@@ -90,16 +97,21 @@ export class AuthService {
     }
     // Register user
     const user = new UserEntity({
-      email: dto.email,
-      password: dto.password,
+      email,
+      password,
       createdBy: SYSTEM_USER_ID,
       updatedBy: SYSTEM_USER_ID,
     });
 
     await user.save();
 
+    const token = await this.createVerificationToken({ id: user.id });
+    // TODO: sendEmailVerification
+    // await this.mailService.sendEmailVerification(email, token);
+
     return plainToInstance(RegisterResDto, {
       userId: user.id,
+      token,
     });
   }
 
@@ -135,6 +147,64 @@ export class AuthService {
     });
   }
 
+  async forgotPassword(email: string): Promise<ForgotPasswordResDto> {
+    const user = await UserEntity.findOneOrFail({
+      where: { email },
+      select: ['id', 'email'],
+    });
+
+    const resetToken = await this.createPasswordResetToken({ id: user.id });
+    // TODO: sendPasswordResetEmail
+    // await this.mailService.sendPasswordResetEmail(email, token);
+    return {
+      token: resetToken,
+    };
+  }
+  async resetPassword(
+    token: string,
+    password: string,
+  ): Promise<ResetPasswordResDto> {
+    let payload: { id: Uuid };
+
+    try {
+      payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.getOrThrow('auth.forgotSecret', {
+          infer: true,
+        }),
+      });
+    } catch {
+      throw new UnauthorizedException();
+    }
+    const user = await UserEntity.findOneByOrFail({ id: payload.id });
+
+    user.password = password;
+    user.updatedBy = SYSTEM_USER_ID;
+
+    await user.save();
+
+    await SessionEntity.delete({ userId: user.id });
+
+    return { message: 'Password has been reset successfully' };
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    let payload: { id: Uuid };
+
+    try {
+      payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
+          infer: true,
+        }),
+      });
+    } catch {
+      throw new UnauthorizedException();
+    }
+
+    const user = await UserEntity.findOneByOrFail({ id: payload.id });
+    // TODO update user status : user.isEmailVerified = true;
+    user.updatedBy = SYSTEM_USER_ID;
+    await user.save();
+  }
   private verifyRefreshToken(token: string): JwtRefreshPayloadType {
     try {
       return this.jwtService.verify(token, {
@@ -168,7 +238,21 @@ export class AuthService {
     return payload;
   }
 
-  //   private async createVerificationToken(data: { id: string }): Promise<string> {}
+  private async createVerificationToken(data: { id: string }): Promise<string> {
+    return await this.jwtService.signAsync(
+      {
+        id: data.id,
+      },
+      {
+        secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
+          infer: true,
+        }),
+        expiresIn: this.configService.getOrThrow('auth.confirmEmailExpires', {
+          infer: true,
+        }),
+      },
+    );
+  }
 
   private async createToken(data: {
     id: string;
@@ -212,5 +296,23 @@ export class AuthService {
       refreshToken,
       tokenExpires,
     } as Token;
+  }
+
+  private async createPasswordResetToken(data: {
+    id: string;
+  }): Promise<string> {
+    return await this.jwtService.signAsync(
+      {
+        id: data.id,
+      },
+      {
+        secret: this.configService.getOrThrow('auth.forgotSecret', {
+          infer: true,
+        }),
+        expiresIn: this.configService.getOrThrow('auth.forgotExpires', {
+          infer: true,
+        }),
+      },
+    );
   }
 }
