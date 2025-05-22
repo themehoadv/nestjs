@@ -14,6 +14,9 @@ import {
   RegisterResDto,
   ResetPasswordReqDto,
   ResetPasswordResDto,
+  VerifyEmailResendReqDto,
+  VerifyForgotPassordReqDto,
+  VerifyForgotPassordResDto,
 } from './dto/index';
 import { JwtPayloadType } from './types/jwt-payload.type';
 
@@ -71,6 +74,17 @@ export class AuthController {
   ): Promise<ForgotPasswordResDto> {
     return await this.authService.forgotPassword(email);
   }
+
+  @ApiPublic({
+    summary: 'Verify forgot password',
+  })
+  @Post('verify/forgot-password')
+  async verifyForgotPassword(
+    @Body() { token }: VerifyForgotPassordReqDto,
+  ): Promise<VerifyForgotPassordResDto> {
+    return await this.authService.verifyForgotPassword(token);
+  }
+
   @ApiPublic({
     type: ResetPasswordResDto,
     summary: 'Reset password',
@@ -79,23 +93,21 @@ export class AuthController {
   async resetPassword(@Body() { token, password }: ResetPasswordReqDto) {
     return await this.authService.resetPassword(token, password);
   }
+
   @ApiPublic({
     summary: 'Verify email',
   })
   @Get('verify/email')
   async verifyEmail(@Query('token') token: string) {
-    await this.authService.verifyEmail(token);
-    return { message: 'Email verified successfully' };
-  }
-  @ApiPublic()
-  @Post('verify/forgot-password')
-  async verifyForgotPassword() {
-    return 'verify-forgot-password';
+    return await this.authService.verifyEmail(token);
   }
 
-  @ApiPublic()
+  @ApiPublic({
+    type: VerifyEmailResendReqDto,
+    summary: 'Resend verification email',
+  })
   @Post('verify/email/resend')
-  async resendVerifyEmail() {
-    return 'resend-verify-email';
+  async resendVerifyEmail(@Body() { email }: VerifyEmailResendReqDto) {
+    return await this.authService.resendVerificationEmail(email);
   }
 }

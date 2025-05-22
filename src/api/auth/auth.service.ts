@@ -1,15 +1,18 @@
 import { Uuid } from '@/common/types/common.type';
 import { AllConfigType } from '@/config/config.type';
 import { SYSTEM_USER_ID } from '@/constants/app.constant';
+import { CacheKey } from '@/constants/cache.constant';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
-import { MailService } from '@/mail/mail.service';
+import { createCacheKey } from '@/utils/cache.util';
 import { verifyPassword } from '@/utils/password.util';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cache } from 'cache-manager';
 import { plainToInstance } from 'class-transformer';
 import crypto from 'crypto';
 import ms from 'ms';
@@ -25,6 +28,7 @@ import {
   RegisterReqDto,
   RegisterResDto,
   ResetPasswordResDto,
+  VerifyForgotPassordResDto,
 } from './dto/index';
 import { JwtPayloadType } from './types/jwt-payload.type';
 import { JwtRefreshPayloadType } from './types/jwt-refresh-payload.type';
@@ -37,11 +41,11 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    private readonly mailService: MailService,
+    // private readonly mailService: MailService,
     // @InjectQueue(QueueName.EMAIL)
     // private readonly emailQueue: Queue<IEmailJob, any, string>,
-    // @Inject(CACHE_MANAGER)
-    // private readonly cacheManager: Cache,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache,
   ) {}
 
   async signIn(dto: LoginReqDto): Promise<LoginResDto> {
@@ -106,8 +110,29 @@ export class AuthService {
     await user.save();
 
     const token = await this.createVerificationToken({ id: user.id });
+    const tokenExpiresIn = this.configService.getOrThrow(
+      'auth.confirmEmailExpires',
+      {
+        infer: true,
+      },
+    );
+
+    await this.cacheManager.set(
+      createCacheKey(CacheKey.EMAIL_VERIFICATION, user.id),
+      token,
+      ms(tokenExpiresIn),
+    );
     // TODO: sendEmailVerification
     // await this.mailService.sendEmailVerification(email, token);
+    // await this.emailQueue.add(
+    //   JobName.EMAIL_VERIFICATION,
+    //   {
+    //     email: dto.email,
+    //     token,
+    //   } as IVerifyEmailJob,
+    //   // TODO attempts: 3 (retry 3 times)
+    //   { attempts: 1, backoff: { type: 'exponential', delay: 60000 } },
+    // );
 
     return plainToInstance(RegisterResDto, {
       userId: user.id,
@@ -116,8 +141,12 @@ export class AuthService {
   }
 
   async logout(userToken: JwtPayloadType): Promise<void> {
-    console.log(userToken);
-    return Promise.resolve();
+    await this.cacheManager.store.set<boolean>(
+      createCacheKey(CacheKey.SESSION_BLACKLIST, userToken.sessionId),
+      true,
+      userToken.exp * 1000 - Date.now(),
+    );
+    await SessionEntity.delete(userToken.sessionId);
   }
 
   async refreshToken(dto: RefreshReqDto): Promise<RefreshResDto> {
@@ -160,6 +189,7 @@ export class AuthService {
       token: resetToken,
     };
   }
+
   async resetPassword(
     token: string,
     password: string,
@@ -187,7 +217,7 @@ export class AuthService {
     return { message: 'Password has been reset successfully' };
   }
 
-  async verifyEmail(token: string): Promise<void> {
+  async verifyEmail(token: string): Promise<{ message: string }> {
     let payload: { id: Uuid };
 
     try {
@@ -204,6 +234,24 @@ export class AuthService {
     // TODO update user status : user.isEmailVerified = true;
     user.updatedBy = SYSTEM_USER_ID;
     await user.save();
+    return { message: 'Email verified successfully' };
+  }
+
+  async verifyForgotPassword(
+    token: string,
+  ): Promise<VerifyForgotPassordResDto> {
+    try {
+      // Xác thực token
+      await this.jwtService.verifyAsync(token, {
+        secret: this.configService.getOrThrow('auth.forgotSecret', {
+          infer: true,
+        }),
+      });
+      // Maybe return userId: payload.id
+      return { isValid: true };
+    } catch (error) {
+      return { isValid: false };
+    }
   }
   private verifyRefreshToken(token: string): JwtRefreshPayloadType {
     try {
@@ -227,13 +275,13 @@ export class AuthService {
     }
 
     // Force logout if the session is in the blacklist
-    // const isSessionBlacklisted = await this.cacheManager.store.get<boolean>(
-    //   createCacheKey(CacheKey.SESSION_BLACKLIST, payload.sessionId),
-    // );
+    const isSessionBlacklisted = await this.cacheManager.store.get<boolean>(
+      createCacheKey(CacheKey.SESSION_BLACKLIST, payload.sessionId),
+    );
 
-    // if (isSessionBlacklisted) {
-    //   throw new UnauthorizedException();
-    // }
+    if (isSessionBlacklisted) {
+      throw new UnauthorizedException();
+    }
 
     return payload;
   }
@@ -252,6 +300,19 @@ export class AuthService {
         }),
       },
     );
+  }
+  async resendVerificationEmail(email: string): Promise<{ token: string }> {
+    const user = await UserEntity.findOneByOrFail({ email });
+    // TODO: check if user is already verified
+    // if (user.isEmailVerified) {
+    //   throw new BadRequestException('Email đã được xác thực trước đó');
+    // }
+
+    // TODO: send email verification
+    // await this.emailService.sendVerificationEmail(user.email, token);
+    const token = await this.createVerificationToken({ id: user.id });
+
+    return { token };
   }
 
   private async createToken(data: {
