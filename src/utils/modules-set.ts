@@ -1,6 +1,5 @@
 import { ApiModule } from '@/api/api.module';
 import authConfig from '@/api/auth/config/auth.config';
-import mediaConfig from '@/api/media/config/media.config';
 import appConfig from '@/config/app.config';
 import { AllConfigType } from '@/config/config.type';
 import { Environment } from '@/constants/app.constant';
@@ -34,7 +33,7 @@ function generateModulesSet() {
         authConfig,
         // mailConfig,
         redisConfig,
-        mediaConfig,
+        // mediaConfig,
       ],
       envFilePath: ['.env'],
     }),
