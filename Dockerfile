@@ -64,8 +64,11 @@ COPY --chown=node:node --from=builder /app/src/generated/i18n.generated.ts ./src
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/dist ./dist
 COPY --chown=node:node --from=builder /app/package.json ./
+COPY startup.sh /app/startup.sh
+
+RUN chmod +x /app/startup.sh
 
 USER node
 
 # Start the server using the production build and run migrations
-CMD [ "sh", "-c", "npm run migration:run && node dist/main.js" ]
+CMD ["/app/startup.sh"]
