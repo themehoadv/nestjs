@@ -48,7 +48,6 @@ RUN pnpm prune --prod
 RUN pnpm install --prod
 
 USER node
-
 ######################
 # BUILD FOR PRODUCTION
 ######################
@@ -69,4 +68,4 @@ COPY --chown=node:node --from=builder /app/package.json ./
 USER node
 
 # Start the server using the production build and run migrations
-CMD ["sh", "-c", "pnpm migration:up && node dist/main.js"]
+CMD [ "sh", "-c", "npm run migration:run && node dist/main.js" ]
