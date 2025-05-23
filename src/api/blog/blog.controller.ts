@@ -2,6 +2,7 @@ import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto
 import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
+import { Public } from '@/decorators/public.decorator';
 import {
   Body,
   Controller,
@@ -29,6 +30,7 @@ export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @Get()
+  @Public()
   @ApiAuth({
     type: BlogResDto,
     summary: 'Get blogs',
@@ -41,6 +43,7 @@ export class BlogController {
   }
 
   @Get(':id')
+  @Public()
   @ApiAuth({
     type: BlogResDto,
     summary: 'Get blog by id',
@@ -48,6 +51,17 @@ export class BlogController {
   @ApiParam({ name: 'id', type: 'String' })
   async findOne(@Param('id', ParseUUIDPipe) id: Uuid) {
     return this.blogService.findOne(id);
+  }
+
+  @Get('/slug/:slug')
+  @Public()
+  @ApiAuth({
+    type: BlogResDto,
+    summary: 'Get blog by slug',
+  })
+  @ApiParam({ name: 'slug', type: 'String' })
+  async findOneBySlug(@Param('slug') slug: string) {
+    return this.blogService.findOneBySlug(slug);
   }
 
   @Post()

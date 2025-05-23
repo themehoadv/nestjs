@@ -8,8 +8,8 @@ import { UnprocessableEntityException } from '@nestjs/common';
 import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
 import { ConfigService } from '@nestjs/config';
 import { diskStorage } from 'multer';
+import * as path from 'path';
 import { normalize } from 'path';
-
 // TODO: Refactor code
 export class MediaUrlUtil {
   static getMediaUrl(
@@ -34,7 +34,7 @@ function generateUniqueFilename(file: Express.Multer.File): string {
   const extension =
     file.originalname?.split('.')?.pop()?.toLowerCase() || '.jpeg';
   const filename = file.originalname?.split('.')?.shift() || 'file-upload';
-  return `${randomStringGenerator()}-${filename}.${extension}`;
+  return `${filename}-${randomStringGenerator()}.${extension}`;
 }
 
 function fileFilter(
@@ -91,3 +91,31 @@ export function createMulterOptions(
     },
   };
 }
+
+export const getMulterConfig = (
+  configService: ConfigService<AllConfigType>,
+) => {
+  const uploadPath =
+    configService.getOrThrow('media.uploadPath', {
+      infer: true,
+    }) || './uploads';
+
+  return {
+    storage: diskStorage({
+      destination: (req, file, cb) => {
+        const folder = req.body?.folder || '';
+        const finalPath = path.join(uploadPath, folder);
+
+        require('fs').mkdirSync(finalPath, { recursive: true });
+        cb(null, finalPath);
+      },
+      filename: (req, file, cb) => {
+        const uniqueName = `${Date.now()}-${file.originalname}`;
+        cb(null, uniqueName);
+      },
+    }),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB
+    },
+  };
+};

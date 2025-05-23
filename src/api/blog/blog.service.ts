@@ -5,7 +5,6 @@ import { ValidationException } from '@/exceptions/validation.exception';
 import { paginate } from '@/utils/offset-pagination';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import assert from 'assert';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { ListUserReqDto } from '../user/dto/list-user.req.dto';
@@ -42,9 +41,12 @@ export class BlogService {
   }
 
   async findOne(id: Uuid): Promise<BlogResDto> {
-    assert(id, 'id is required');
     const blog = await BlogEntity.findOneByOrFail({ id });
+    return blog.toDto(BlogResDto);
+  }
 
+  async findOneBySlug(slug: string): Promise<BlogResDto> {
+    const blog = await BlogEntity.findOneByOrFail({ slug });
     return blog.toDto(BlogResDto);
   }
 
