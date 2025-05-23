@@ -56,7 +56,9 @@ USER node
 FROM node:20-alpine AS production
 WORKDIR /app
 
+# Create directories and set permissions
 RUN mkdir -p src/generated && chown -R node:node src
+RUN mkdir -p /uploads && chown -R node:node /uploads
 
 # Copy the bundled code from the build stage to the production image
 COPY --chown=node:node --from=builder /app/src/generated/i18n.generated.ts ./src/generated/i18n.generated.ts
@@ -66,5 +68,5 @@ COPY --chown=node:node --from=builder /app/package.json ./
 
 USER node
 
-# Start the server using the production build
-CMD [ "node", "dist/main.js" ]
+# Start the server using the production build and run migrations
+CMD ["sh", "-c", "pnpm migration:up && node dist/main.js"]
