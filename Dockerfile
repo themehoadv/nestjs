@@ -53,6 +53,9 @@ USER node
 ######################
 
 FROM node:20-alpine AS production
+# Install bash
+RUN apk add --no-cache bash
+
 WORKDIR /app
 
 # Create directories and set permissions
