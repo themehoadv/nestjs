@@ -48,17 +48,14 @@ RUN pnpm prune --prod
 RUN pnpm install --prod
 
 USER node
+
 ######################
 # BUILD FOR PRODUCTION
 ######################
 
 FROM node:20-alpine AS production
-# Install bash
-RUN apk add --no-cache bash
-
 WORKDIR /app
 
-# Create directories and set permissions
 RUN mkdir -p src/generated && chown -R node:node src
 RUN mkdir -p /uploads && chown -R node:node /uploads
 
@@ -67,11 +64,8 @@ COPY --chown=node:node --from=builder /app/src/generated/i18n.generated.ts ./src
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/dist ./dist
 COPY --chown=node:node --from=builder /app/package.json ./
-COPY startup.sh /app/startup.sh
-
-RUN chmod +x /app/startup.sh
 
 USER node
 
-# Start the server using the production build and run migrations
-CMD ["/app/startup.sh"]
+# Start the server using the production build
+CMD [ "node", "dist/main.js" ]
