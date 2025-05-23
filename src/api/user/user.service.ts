@@ -83,12 +83,15 @@ export class UserService {
 
   async update(id: Uuid, updateUserDto: UpdateUserReqDto) {
     const user = await this.userRepository.findOneByOrFail({ id });
-
-    user.bio = updateUserDto.bio;
-    user.image = updateUserDto.image;
+    // TODO: check unique email and username
+    user.username = updateUserDto.username || user.username;
+    user.email = updateUserDto.email || user.email;
+    user.bio = updateUserDto.bio || user.bio;
+    user.image = updateUserDto.image || user.image;
     user.updatedBy = SYSTEM_USER_ID;
 
     await this.userRepository.save(user);
+    return user.toDto(UserResDto);
   }
 
   async remove(id: Uuid) {

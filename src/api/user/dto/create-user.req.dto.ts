@@ -13,6 +13,7 @@ export class CreateUserReqDto {
   username: string;
 
   @EmailField()
+  @Transform(lowerCaseTransformer)
   email: string;
 
   @PasswordField()

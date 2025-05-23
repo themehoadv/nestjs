@@ -1,8 +1,22 @@
-import { OmitType } from '@nestjs/swagger';
-import { CreateUserReqDto } from './create-user.req.dto';
+import {
+  EmailFieldOptional,
+  StringFieldOptional,
+} from '@/decorators/field.decorators';
+import { lowerCaseTransformer } from '@/utils/transformers/lower-case.transformer';
+import { Transform } from 'class-transformer';
 
-export class UpdateUserReqDto extends OmitType(CreateUserReqDto, [
-  'username',
-  'email',
-  'password',
-] as const) {}
+export class UpdateUserReqDto {
+  @StringFieldOptional()
+  @Transform(lowerCaseTransformer)
+  username?: string;
+
+  @EmailFieldOptional()
+  @Transform(lowerCaseTransformer)
+  email?: string;
+
+  @StringFieldOptional()
+  bio?: string;
+
+  @StringFieldOptional()
+  image?: string;
+}
