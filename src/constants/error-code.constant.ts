@@ -14,4 +14,7 @@ export enum ErrorCode {
   // Blog Error
   B001 = 'blog.error.slug_exists',
   B002 = 'blog.error.not_found',
+
+  // Course Error
+  C001 = 'course.error.slug_exists',
 }

@@ -1,8 +1,7 @@
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
-import { ApiAuth } from '@/decorators/http.decorators';
-import { Public } from '@/decorators/public.decorator';
+import { ApiAuth, ApiPublic } from '@/decorators/http.decorators';
 import {
   Body,
   Controller,
@@ -30,8 +29,7 @@ export class BlogController {
   constructor(private readonly blogService: BlogService) {}
 
   @Get()
-  @Public()
-  @ApiAuth({
+  @ApiPublic({
     type: BlogResDto,
     summary: 'Get blogs',
     isPaginated: true,
@@ -43,8 +41,7 @@ export class BlogController {
   }
 
   @Get(':id')
-  @Public()
-  @ApiAuth({
+  @ApiPublic({
     type: BlogResDto,
     summary: 'Get blog by id',
   })
@@ -54,8 +51,7 @@ export class BlogController {
   }
 
   @Get('/slug/:slug')
-  @Public()
-  @ApiAuth({
+  @ApiPublic({
     type: BlogResDto,
     summary: 'Get blog by slug',
   })

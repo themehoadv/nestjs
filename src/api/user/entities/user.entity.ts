@@ -1,4 +1,5 @@
 import { BlogEntity } from '@/api/blog/entities/blog.entity';
+import { CourseEntity } from '@/api/course/entities/course.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import { hashPassword as hashPass } from '@/utils/password.util';
@@ -47,6 +48,9 @@ export class UserEntity extends AbstractEntity {
 
   @Column({ default: '' })
   image?: string;
+
+  @OneToMany(() => CourseEntity, (course) => course.author)
+  courses: Relation<CourseEntity[]>;
 
   @DeleteDateColumn({
     name: 'deleted_at',
