@@ -1,3 +1,4 @@
+import { ChapterEntity } from '@/api/chapter/entities/chapter.entity';
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
@@ -10,7 +11,6 @@ import { plainToInstance } from 'class-transformer';
 import { EntityManager, Repository } from 'typeorm';
 import { ListUserReqDto } from '../user/dto';
 import { ChapterResDto, CourseResDto, CreateCourseReqDto } from './dto';
-import { ChapterEntity } from './entities/chapter.entity';
 import { CourseEntity } from './entities/course.entity';
 
 @Injectable()
@@ -63,6 +63,7 @@ export class CourseService {
             description: chapterDto.description,
             order: chapterDto.order ?? index + 1, // Default order if not provided
             courseId: savedCourse.id,
+            course: newCourse,
             createdBy: user.username || user.email,
             updatedBy: user.username || user.email,
           });
@@ -78,6 +79,23 @@ export class CourseService {
 
       return plainToInstance(CourseResDto, savedCourse);
     });
+  }
+
+  async findOne(id: Uuid): Promise<CourseResDto> {
+    const course = await CourseEntity.findOne({
+      where: { id },
+      relations: ['chapters'],
+      order: {
+        chapters: {
+          order: 'ASC', // Sắp xếp chapters theo order
+        },
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException('Course not found');
+    }
+    return course.toDto(CourseResDto);
   }
 
   async findManyWithChapters(
@@ -106,12 +124,7 @@ export class CourseService {
     courseId: Uuid,
     reqDto: ListUserReqDto,
   ): Promise<OffsetPaginatedDto<ChapterResDto>> {
-    // Kiểm tra course tồn tại
-    const course = await CourseEntity.findOneBy({ id: courseId });
-    if (!course) {
-      throw new NotFoundException('Course not found');
-    }
-
+    await CourseEntity.findOneByOrFail({ id: courseId });
     // Tạo query builder để lấy chapters
     const query = ChapterEntity.createQueryBuilder('chapter')
       .where('chapter.courseId = :courseId', { courseId })
@@ -132,5 +145,6 @@ export class CourseService {
   async delete(id: Uuid) {
     await CourseEntity.findOneByOrFail({ id });
     await this.courseRepository.softDelete(id);
+    return { message: 'Delete done' };
   }
 }

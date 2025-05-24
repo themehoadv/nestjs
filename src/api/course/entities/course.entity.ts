@@ -1,3 +1,4 @@
+import { ChapterEntity } from '@/api/chapter/entities/chapter.entity';
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
@@ -10,9 +11,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   Relation,
-  RelationId,
 } from 'typeorm';
-import { ChapterEntity } from './chapter.entity';
 
 @Entity('course')
 export class CourseEntity extends AbstractEntity {
@@ -51,7 +50,6 @@ export class CourseEntity extends AbstractEntity {
   author: Relation<UserEntity>;
 
   @OneToMany(() => ChapterEntity, (chapter) => chapter.course)
-  @RelationId((course: CourseEntity) => course.chapters)
   chapters: Relation<ChapterEntity[]>;
 
   @DeleteDateColumn({

@@ -1,8 +1,7 @@
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
-import { ApiAuth } from '@/decorators/http.decorators';
-import { Public } from '@/decorators/public.decorator';
+import { ApiAuth, ApiPublic } from '@/decorators/http.decorators';
 import {
   Body,
   Controller,
@@ -27,8 +26,7 @@ export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
   @Get()
-  @Public()
-  @ApiAuth({
+  @ApiPublic({
     type: CourseResDto,
     summary: 'Get courses',
     isPaginated: true,
@@ -39,14 +37,23 @@ export class CourseController {
     return this.courseService.findManyWithChapters(reqDto);
   }
 
+  @Get(':id')
+  @ApiPublic({
+    type: CourseResDto,
+    summary: 'Get course by id',
+  })
+  @ApiParam({ name: 'id', type: 'String' })
+  async findOne(@Param('id', ParseUUIDPipe) id: Uuid) {
+    return this.courseService.findOne(id);
+  }
+
   @Get(':id/chapters')
-  @Public()
-  @ApiAuth({
+  @ApiPublic({
     type: CourseResDto,
     summary: 'Get chapters by course id',
   })
   @ApiParam({ name: 'id', type: 'String' })
-  async findOne(
+  async findOneWithChapters(
     @Param('id', ParseUUIDPipe) id: Uuid,
     @Query() reqDto: ListUserReqDto,
   ) {
