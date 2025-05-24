@@ -62,7 +62,9 @@ export class UserEntity extends AbstractEntity {
   @OneToMany(() => SessionEntity, (session) => session.user)
   sessions?: SessionEntity[];
 
-  @OneToMany(() => BlogEntity, (blog) => blog.user)
+  @OneToMany(() => BlogEntity, (blog) => blog.user, {
+    cascade: true,
+  })
   blogs: Relation<BlogEntity[]>;
 
   @BeforeInsert()

@@ -5,6 +5,7 @@ import {
   Column,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -31,13 +32,18 @@ export class ChapterEntity extends AbstractEntity {
   @Column({ nullable: true })
   description?: string;
 
-  @Column({ name: 'course_id' })
+  @Column({ name: 'course_id', type: 'uuid' })
   courseId!: Uuid;
 
-  @ManyToOne(() => CourseEntity, (course) => course.chapters)
+  @ManyToOne(() => CourseEntity, (course) => course.chapters, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'course_id' })
   course: Relation<CourseEntity>;
 
-  @OneToMany(() => LessonEntity, (lesson) => lesson.chapter)
+  @OneToMany(() => LessonEntity, (lesson) => lesson.chapter, {
+    cascade: true,
+  })
   lessons: Relation<LessonEntity>[];
 
   @DeleteDateColumn({

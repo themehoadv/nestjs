@@ -33,15 +33,11 @@ export class BlogEntity extends AbstractEntity {
   @Column({ nullable: true })
   content?: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId!: Uuid;
 
-  @JoinColumn({
-    name: 'user_id',
-    referencedColumnName: 'id',
-    foreignKeyConstraintName: 'FK_blog_user_id',
-  })
   @ManyToOne(() => UserEntity, (user) => user.blogs)
+  @JoinColumn({ name: 'user_id' })
   user: Relation<UserEntity>;
 
   @DeleteDateColumn({

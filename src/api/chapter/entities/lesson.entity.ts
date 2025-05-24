@@ -4,6 +4,7 @@ import {
   Column,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -31,10 +32,11 @@ export class LessonEntity extends AbstractEntity {
   @Column({ type: 'text', nullable: true })
   content?: string;
 
-  @Column({ name: 'chapter_id' })
+  @Column({ name: 'chapter_id', type: 'uuid' })
   chapterId!: Uuid;
 
   @ManyToOne(() => ChapterEntity, (chapter) => chapter.lessons)
+  @JoinColumn({ name: 'chapter_id' })
   chapter: ChapterEntity;
 
   @DeleteDateColumn({

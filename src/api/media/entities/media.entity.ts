@@ -31,16 +31,22 @@ export class MediaEntity extends AbstractEntity {
   @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_media_id' })
   id!: Uuid;
 
-  @Column()
+  @Column({
+    name: 'original_name',
+  })
   originalName!: string;
 
-  @Column()
+  @Column({
+    name: 'file_name',
+  })
   fileName!: string;
 
   @Column()
   path!: string;
 
-  @Column()
+  @Column({
+    name: 'mime_type',
+  })
   mimeType!: string;
 
   @Column({ type: 'enum', enum: MediaType })
@@ -55,34 +61,16 @@ export class MediaEntity extends AbstractEntity {
   @Column({ nullable: true })
   height?: number;
 
-  @Column({ type: 'enum', enum: MediaReferenceType, nullable: true })
+  @Column({
+    name: 'reference_type',
+    type: 'enum',
+    enum: MediaReferenceType,
+    nullable: true,
+  })
   referenceType?: MediaReferenceType;
 
-  @Column({ name: 'reference_id', nullable: true })
+  @Column({ name: 'reference_id', nullable: true, type: 'uuid' })
   referenceId?: Uuid;
-
-  // Optional relations to specific entities
-  // These are nullable since a media file might not be associated with any entity yet
-
-  // @ManyToOne(() => BlogEntity, (blog) => blog.images, {
-  //   onDelete: 'SET NULL',
-  // })
-  // @JoinColumn({
-  //   name: 'reference_id',
-  //   referencedColumnName: 'id',
-  //   foreignKeyConstraintName: 'FK_media_blog_id',
-  // })
-  // blog?: Relation<BlogEntity>;
-
-  // @OneToOne(() => UserEntity, (user) => user.avatar, {
-  //   onDelete: 'SET NULL',
-  // })
-  // @JoinColumn({
-  //   name: 'reference_id',
-  //   referencedColumnName: 'id',
-  //   foreignKeyConstraintName: 'FK_media_user_id',
-  // })
-  // user?: Relation<UserEntity>;
 
   @DeleteDateColumn({
     name: 'deleted_at',

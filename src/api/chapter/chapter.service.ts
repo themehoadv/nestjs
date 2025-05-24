@@ -69,7 +69,7 @@ export class ChapterService {
 
     const { courseId, title, description, order, lessons = [] } = reqDto;
 
-    const course = await this.entityManager.findOneByOrFail(CourseEntity, {
+    await this.entityManager.findOneByOrFail(CourseEntity, {
       id: courseId,
     });
 
@@ -80,7 +80,6 @@ export class ChapterService {
         description,
         order,
         courseId,
-        course,
         createdBy: user.username || user.email,
         updatedBy: user.username || user.email,
       });
@@ -99,7 +98,6 @@ export class ChapterService {
             content: lessonDto.content,
             order: lessonDto.order ?? index + 1,
             chapterId: savedChapter.id,
-            chapter: savedChapter,
             createdBy: user.username || user.email,
             updatedBy: user.username || user.email,
           });

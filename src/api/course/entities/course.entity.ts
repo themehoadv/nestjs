@@ -32,24 +32,28 @@ export class CourseEntity extends AbstractEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   price!: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    name: 'old_price',
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+  })
   oldPrice?: number;
 
   @Column({ nullable: true })
   description?: string;
 
-  @Column({ name: 'author_id' })
+  @Column({ name: 'author_id', type: 'uuid' })
   authorId!: Uuid;
 
-  @JoinColumn({
-    name: 'author_id',
-    referencedColumnName: 'id',
-    foreignKeyConstraintName: 'FK_course_author_id',
-  })
   @ManyToOne(() => UserEntity, (user) => user.courses)
+  @JoinColumn({ name: 'author_id' })
   author: Relation<UserEntity>;
 
-  @OneToMany(() => ChapterEntity, (chapter) => chapter.course)
+  @OneToMany(() => ChapterEntity, (chapter) => chapter.course, {
+    cascade: true,
+  })
   chapters: Relation<ChapterEntity[]>;
 
   @DeleteDateColumn({

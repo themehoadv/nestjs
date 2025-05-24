@@ -63,7 +63,6 @@ export class CourseService {
             description: chapterDto.description,
             order: chapterDto.order ?? index + 1, // Default order if not provided
             courseId: savedCourse.id,
-            course: newCourse,
             createdBy: user.username || user.email,
             updatedBy: user.username || user.email,
           });
