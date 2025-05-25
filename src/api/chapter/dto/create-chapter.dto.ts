@@ -55,6 +55,18 @@ export class LessonResDto {
   updatedAt: Date;
 }
 
+export class CreateChapterWithCourseReqDto {
+  @StringField()
+  title: string;
+
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @NumberFieldOptional()
+  order?: number;
+}
+
 export class CreateChapterReqDto {
   @UUIDField()
   courseId: Uuid;

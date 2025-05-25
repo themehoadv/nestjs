@@ -1,7 +1,7 @@
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { Uuid } from '@/common/types/common.type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
-import { ApiAuth } from '@/decorators/http.decorators';
+import { ApiAuth, ApiPublic } from '@/decorators/http.decorators';
 import {
   Body,
   Controller,
@@ -50,6 +50,16 @@ export class UserController {
     @Body() createUserDto: CreateUserReqDto,
   ): Promise<UserResDto> {
     return await this.userService.create(createUserDto);
+  }
+
+  @Get('/all')
+  @ApiPublic({
+    type: Array<UserResDto>,
+    summary: 'List users all',
+    isPaginated: true,
+  })
+  async findAll(): Promise<Array<UserResDto>> {
+    return await this.userService.findAllNoPagination();
   }
 
   @Get()

@@ -49,7 +49,7 @@ export class MediaEntity extends AbstractEntity {
   })
   mimeType!: string;
 
-  @Column({ type: 'enum', enum: MediaType })
+  @Column({ type: 'enum', enum: MediaType, enumName: 'media_type_enum' })
   type!: MediaType;
 
   @Column({ type: 'bigint' })
@@ -66,6 +66,7 @@ export class MediaEntity extends AbstractEntity {
     type: 'enum',
     enum: MediaReferenceType,
     nullable: true,
+    enumName: 'media_reference_type_enum',
   })
   referenceType?: MediaReferenceType;
 

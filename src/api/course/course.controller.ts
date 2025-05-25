@@ -25,6 +25,15 @@ import { CourseResDto, CreateCourseReqDto } from './dto/create-course.dto';
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
+  @Get('/all')
+  @ApiPublic({
+    type: Array<CourseResDto>,
+    summary: 'Get courses all',
+  })
+  async findAll(): Promise<CourseResDto[]> {
+    return this.courseService.findAll();
+  }
+
   @Get()
   @ApiPublic({
     type: CourseResDto,

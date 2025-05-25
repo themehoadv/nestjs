@@ -49,7 +49,9 @@ export class UserEntity extends AbstractEntity {
   @Column({ default: '' })
   image?: string;
 
-  @OneToMany(() => CourseEntity, (course) => course.author)
+  @OneToMany(() => CourseEntity, (course) => course.author, {
+    cascade: true,
+  })
   courses: Relation<CourseEntity[]>;
 
   @DeleteDateColumn({
@@ -59,7 +61,9 @@ export class UserEntity extends AbstractEntity {
   })
   deletedAt: Date;
 
-  @OneToMany(() => SessionEntity, (session) => session.user)
+  @OneToMany(() => SessionEntity, (session) => session.user, {
+    cascade: true,
+  })
   sessions?: SessionEntity[];
 
   @OneToMany(() => BlogEntity, (blog) => blog.user, {

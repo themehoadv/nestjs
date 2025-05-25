@@ -60,6 +60,36 @@ export class UserService {
     return plainToInstance(UserResDto, savedUser);
   }
 
+  async findAllNoPagination(): Promise<Array<UserResDto>> {
+    const users = await this.userRepository.find({
+      relations: ['blogs', 'courses', 'sessions'],
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        blogs: {
+          id: true,
+          title: true,
+        },
+        courses: {
+          id: true,
+          title: true,
+        },
+        sessions: {
+          id: true,
+          createdAt: true,
+        },
+      },
+      order: {
+        courses: {
+          createdAt: 'ASC', // Sắp xếp chapters theo order
+        },
+      },
+    });
+
+    return users.map((user) => user.toDto(UserResDto));
+  }
+
   async findAll(
     reqDto: ListUserReqDto,
   ): Promise<OffsetPaginatedDto<UserResDto>> {

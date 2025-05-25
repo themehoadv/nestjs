@@ -34,11 +34,9 @@ export class SessionEntity extends AbstractEntity {
   })
   userId: Uuid;
 
+  @ManyToOne(() => UserEntity, (user) => user.sessions)
   @JoinColumn({
     name: 'user_id',
-    referencedColumnName: 'id',
-    foreignKeyConstraintName: 'FK_session_user',
   })
-  @ManyToOne(() => UserEntity, (user) => user.sessions)
   user!: UserEntity;
 }

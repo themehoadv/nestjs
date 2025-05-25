@@ -1,35 +1,21 @@
 import {
+  ChapterResDto,
+  CreateChapterWithCourseReqDto,
+} from '@/api/chapter/dto';
+import {
   NumberField,
   NumberFieldOptional,
   StringField,
+  StringFieldOptional,
 } from '@/decorators/field.decorators';
-import { Expose, Type } from 'class-transformer';
-import {
-  IsArray,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  ValidateNested,
-} from 'class-validator';
-
-export class CreateChapterDto {
-  @StringField()
-  title: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
-
-  @IsOptional()
-  order?: number;
-}
+import { Exclude, Expose, Type } from 'class-transformer';
+import { IsArray, IsOptional, ValidateNested } from 'class-validator';
 
 export class CreateCourseReqDto {
   @StringField()
   title: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @StringField()
   slug: string;
 
   @NumberField()
@@ -38,37 +24,17 @@ export class CreateCourseReqDto {
   @NumberFieldOptional()
   oldPrice?: number;
 
-  @IsString()
-  @IsOptional()
+  @StringFieldOptional()
   description?: string;
 
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
-  @Type(() => CreateChapterDto)
-  chapters?: CreateChapterDto[];
+  @Type(() => CreateChapterWithCourseReqDto)
+  chapters?: CreateChapterWithCourseReqDto[];
 }
 
-export class ChapterResDto {
-  @Expose()
-  id: string;
-
-  @Expose()
-  title: string;
-
-  @Expose()
-  description?: string;
-
-  @Expose()
-  order: number;
-
-  @Expose()
-  createdAt: Date;
-
-  @Expose()
-  updatedAt: Date;
-}
-
+@Exclude()
 export class CourseResDto {
   @Expose()
   id: string;

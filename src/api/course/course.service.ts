@@ -9,8 +9,9 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { EntityManager, Repository } from 'typeorm';
+import { ChapterResDto } from '../chapter/dto';
 import { ListUserReqDto } from '../user/dto';
-import { ChapterResDto, CourseResDto, CreateCourseReqDto } from './dto';
+import { CourseResDto, CreateCourseReqDto } from './dto';
 import { CourseEntity } from './entities/course.entity';
 
 @Injectable()
@@ -83,7 +84,7 @@ export class CourseService {
   async findOne(id: Uuid): Promise<CourseResDto> {
     const course = await CourseEntity.findOne({
       where: { id },
-      relations: ['chapters'],
+      relations: ['chapters', 'author'],
       order: {
         chapters: {
           order: 'ASC', // Sắp xếp chapters theo order
@@ -97,12 +98,50 @@ export class CourseService {
     return course.toDto(CourseResDto);
   }
 
+  async findAll(): Promise<CourseResDto[]> {
+    const courses = await CourseEntity.find({
+      relations: ['chapters', 'author'],
+      select: {
+        id: true,
+        title: true,
+        author: {
+          id: true,
+          username: true,
+          email: true,
+        },
+        chapters: {
+          id: true,
+          title: true,
+          order: true,
+        },
+      },
+      order: {
+        chapters: {
+          order: 'ASC', // Sắp xếp chapters theo order
+        },
+      },
+    });
+
+    return courses.map((course) => course.toDto(CourseResDto));
+  }
+
   async findManyWithChapters(
     reqDto: ListUserReqDto,
   ): Promise<OffsetPaginatedDto<CourseResDto>> {
     // Tạo query builder với relation chapters
     const query = CourseEntity.createQueryBuilder('course')
       .leftJoinAndSelect('course.chapters', 'chapters')
+      .leftJoinAndSelect('course.author', 'author')
+      .select(['course']) // Lấy tất cả trường của course
+      .addSelect([
+        'author.id',
+        'author.username',
+        'author.email',
+        'chapters.id',
+        'chapters.title',
+        'chapters.order',
+        // Thêm các trường khác nếu cần
+      ])
       .orderBy('course.createdAt', 'DESC')
       .addOrderBy('chapters.order', 'ASC'); // Sắp xếp chapters theo order
 
@@ -127,6 +166,7 @@ export class CourseService {
     // Tạo query builder để lấy chapters
     const query = ChapterEntity.createQueryBuilder('chapter')
       .where('chapter.courseId = :courseId', { courseId })
+      .leftJoinAndSelect('course.author', 'author')
       .orderBy('chapter.order', 'ASC'); // Sắp xếp theo thứ tự chapter
 
     // Phân trang
