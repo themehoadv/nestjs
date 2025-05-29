@@ -36,17 +36,23 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   const isDevelopment =
     configService.getOrThrow('app.nodeEnv', { infer: true }) === 'development';
-  const corsOrigin = configService.getOrThrow('app.corsOrigin', {
-    infer: true,
-  });
-
   app.enableCors({
-    origin: corsOrigin,
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Accept',
+    allowedHeaders: '*',
     credentials: true,
   });
-  console.info('CORS Origin:', corsOrigin);
+  // const corsOrigin = configService.getOrThrow('app.corsOrigin', {
+  //   infer: true,
+  // });
+
+  // app.enableCors({
+  //   origin: corsOrigin,
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  //   allowedHeaders: 'Content-Type, Accept',
+  //   credentials: true,
+  // });
+  // console.info('CORS Origin:', corsOrigin);
 
   // Use global prefix if you don't have subdomain
   app.setGlobalPrefix(
