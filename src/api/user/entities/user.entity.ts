@@ -1,5 +1,4 @@
-import { BlogEntity } from '@/api/blog/entities/blog.entity';
-import { CourseEntity } from '@/api/course/entities/course.entity';
+import { PostEntity } from '@/api/post/entities/post.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import { hashPassword as hashPass } from '@/utils/password.util';
@@ -14,9 +13,8 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
-import { SessionEntity } from './session.entity';
 
-@Entity('user')
+@Entity('users')
 export class UserEntity extends AbstractEntity {
   constructor(data?: Partial<UserEntity>) {
     super();
@@ -47,12 +45,7 @@ export class UserEntity extends AbstractEntity {
   bio?: string;
 
   @Column({ default: '' })
-  image?: string;
-
-  @OneToMany(() => CourseEntity, (course) => course.author, {
-    cascade: true,
-  })
-  courses: Relation<CourseEntity[]>;
+  avatar?: string;
 
   @DeleteDateColumn({
     name: 'deleted_at',
@@ -61,15 +54,8 @@ export class UserEntity extends AbstractEntity {
   })
   deletedAt: Date;
 
-  @OneToMany(() => SessionEntity, (session) => session.user, {
-    cascade: true,
-  })
-  sessions?: SessionEntity[];
-
-  @OneToMany(() => BlogEntity, (blog) => blog.user, {
-    cascade: true,
-  })
-  blogs: Relation<BlogEntity[]>;
+  @OneToMany(() => PostEntity, (post) => post.user)
+  posts: Relation<PostEntity[]>;
 
   @BeforeInsert()
   @BeforeUpdate()

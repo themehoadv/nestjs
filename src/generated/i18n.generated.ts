@@ -5,18 +5,6 @@
 import { Path } from "nestjs-i18n";
 /* prettier-ignore */
 export type I18nTranslations = {
-    "blog": {
-        "unique": {
-            "slug": string;
-        };
-        "validation": {
-            "is_empty": string;
-        };
-        "error": {
-            "slug_exists": string;
-            "not_found": string;
-        };
-    };
     "common": {
         "validation": {
             "error": string;

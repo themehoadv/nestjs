@@ -1,8 +1,8 @@
-import { AllConfigType } from '@/config/config.type';
 import TypeOrmCustomLogger from '@/utils/typeorm-custom-logger';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
+import { AllConfigType } from '../config/config.type';
 
 @Injectable()
 export class TypeOrmConfigService implements TypeOrmOptionsFactory {
@@ -37,9 +37,7 @@ export class TypeOrmConfigService implements TypeOrmOptionsFactory {
         ? {
             rejectUnauthorized: this.configService.get(
               'database.rejectUnauthorized',
-              {
-                infer: true,
-              },
+              { infer: true },
             ),
             ca:
               this.configService.get('database.ca', { infer: true }) ??

@@ -1,18 +1,15 @@
 import { ApiModule } from '@/api/api.module';
 import authConfig from '@/api/auth/config/auth.config';
-import mediaConfig from '@/api/media/config/media.config';
 import appConfig from '@/config/app.config';
 import { AllConfigType } from '@/config/config.type';
 import { Environment } from '@/constants/app.constant';
 import databaseConfig from '@/database/config/database.config';
 import { TypeOrmConfigService } from '@/database/typeorm-config.service';
-import redisConfig from '@/redis/config/redis.config';
-import { BullModule } from '@nestjs/bullmq';
-import { CacheModule } from '@nestjs/cache-manager';
+import mailConfig from '@/mail/config/mail.config';
+import { MailModule } from '@/mail/mail.module';
 import { ModuleMetadata } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { redisStore } from 'cache-manager-ioredis-yet';
 import {
   AcceptLanguageResolver,
   HeaderResolver,
@@ -28,17 +25,12 @@ function generateModulesSet() {
   const imports: ModuleMetadata['imports'] = [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [
-        appConfig,
-        databaseConfig,
-        authConfig,
-        // mailConfig,
-        redisConfig,
-        mediaConfig,
-      ],
+      load: [appConfig, databaseConfig, authConfig, mailConfig],
       envFilePath: ['.env'],
     }),
   ];
+  let customModules: ModuleMetadata['imports'] = [];
+
   const dbModule = TypeOrmModule.forRootAsync({
     useClass: TypeOrmConfigService,
     dataSourceFactory: async (options: DataSourceOptions) => {
@@ -50,35 +42,6 @@ function generateModulesSet() {
     },
   });
 
-  const loggerModule = LoggerModule.forRootAsync({
-    imports: [ConfigModule],
-    inject: [ConfigService],
-    useFactory: loggerFactory,
-  });
-
-  const bullModule = BullModule.forRootAsync({
-    imports: [ConfigModule],
-    useFactory: (configService: ConfigService<AllConfigType>) => {
-      return {
-        connection: {
-          host: configService.getOrThrow('redis.host', {
-            infer: true,
-          }),
-          port: configService.getOrThrow('redis.port', {
-            infer: true,
-          }),
-          username: configService.getOrThrow('redis.username', {
-            infer: true,
-          }),
-          password: configService.getOrThrow('redis.password', {
-            infer: true,
-          }),
-          tls: configService.get('redis.tlsEnabled', { infer: true }),
-        },
-      };
-    },
-    inject: [ConfigService],
-  });
   const i18nModule = I18nModule.forRootAsync({
     resolvers: [
       { use: QueryResolver, options: ['lang'] },
@@ -106,40 +69,15 @@ function generateModulesSet() {
     },
     inject: [ConfigService],
   });
-  const cacheModule = CacheModule.registerAsync({
+
+  const loggerModule = LoggerModule.forRootAsync({
     imports: [ConfigModule],
-    useFactory: async (configService: ConfigService<AllConfigType>) => {
-      return {
-        store: await redisStore({
-          host: configService.getOrThrow('redis.host', {
-            infer: true,
-          }),
-          port: configService.getOrThrow('redis.port', {
-            infer: true,
-          }),
-          username: configService.getOrThrow('redis.username', {
-            infer: true,
-          }),
-          password: configService.getOrThrow('redis.password', {
-            infer: true,
-          }),
-          tls: configService.get('redis.tlsEnabled', { infer: true }),
-        }),
-      };
-    },
-    isGlobal: true,
     inject: [ConfigService],
+    useFactory: loggerFactory,
   });
-  const customModules = [
-    ApiModule,
-    bullModule,
-    // BackgroundModule,
-    cacheModule,
-    dbModule,
-    i18nModule,
-    loggerModule,
-    // MailModule,
-  ];
+
+  customModules = [ApiModule, dbModule, i18nModule, loggerModule, MailModule];
+
   return imports.concat(customModules);
 }
 

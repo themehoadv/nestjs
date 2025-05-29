@@ -11,17 +11,15 @@ export class MailService {
   ) {}
 
   async sendEmailVerification(email: string, token: string) {
-    console.log(email, token);
-    const emailTest = 'hoadvfpoly@gmail.com';
     // Please replace the URL with your own frontend URL
     const url = `${this.configService.get('app.url', { infer: true })}/api/v1/auth/verify/email?token=${token}`;
 
     await this.mailerService.sendMail({
-      to: emailTest,
+      to: email,
       subject: 'Email Verification',
       template: 'email-verification',
       context: {
-        email: emailTest,
+        email: email,
         url,
       },
     });

@@ -1,38 +1,34 @@
-import { Uuid } from '@/common/types/common.type';
+import { SuccessDto } from '@/common/dto/sucess.dto';
+import { Branded } from '@/common/types/types';
 import { AllConfigType } from '@/config/config.type';
-import { SYSTEM_USER_ID } from '@/constants/app.constant';
-import { CacheKey } from '@/constants/cache.constant';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
-import { createCacheKey } from '@/utils/cache.util';
 import { verifyPassword } from '@/utils/password.util';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { randomStringGenerator } from '@nestjs/common/utils/random-string-generator.util';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Cache } from 'cache-manager';
 import { plainToInstance } from 'class-transformer';
-import crypto from 'crypto';
 import ms from 'ms';
 import { Repository } from 'typeorm';
-import { SessionEntity } from '../user/entities/session.entity';
 import { UserEntity } from '../user/entities/user.entity';
-import {
-  ForgotPasswordResDto,
-  LoginReqDto,
-  LoginResDto,
-  RefreshReqDto,
-  RefreshResDto,
-  RegisterReqDto,
-  RegisterResDto,
-  ResetPasswordResDto,
-  VerifyForgotPassordResDto,
-} from './dto/index';
+import { LoginReqDto } from './dto/login.req.dto';
+import { LoginResDto } from './dto/login.res.dto';
+import { RefreshReqDto } from './dto/refresh.req.dto';
+import { RefreshResDto } from './dto/refresh.res.dto';
+import { RegisterReqDto } from './dto/register.req.dto';
+import { RegisterResDto } from './dto/register.res.dto';
 import { JwtPayloadType } from './types/jwt-payload.type';
 import { JwtRefreshPayloadType } from './types/jwt-refresh-payload.type';
-import { Token } from './types/token.type';
+
+type Token = Branded<
+  {
+    accessToken: string;
+    refreshToken: string;
+    tokenExpires: number;
+  },
+  'token'
+>;
 
 @Injectable()
 export class AuthService {
@@ -41,17 +37,16 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
-    // private readonly mailService: MailService,
-    // @InjectQueue(QueueName.EMAIL)
-    // private readonly emailQueue: Queue<IEmailJob, any, string>,
-    @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache,
   ) {}
 
-  async signIn(dto: LoginReqDto): Promise<LoginResDto> {
+  /**
+   * Sign in user
+   * @param dto LoginReqDto
+   * @returns LoginResDto
+   */
+  async signIn(dto: LoginReqDto): Promise<SuccessDto<LoginResDto>> {
     const { email, password } = dto;
-
-    const user = await UserEntity.findOne({
+    const user = await this.userRepository.findOne({
       where: { email },
       select: ['id', 'email', 'password'],
     });
@@ -63,196 +58,67 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const hash = crypto
-      .createHash('sha256')
-      .update(randomStringGenerator())
-      .digest('hex');
-
-    const session = new SessionEntity({
-      hash,
-      userId: user.id,
-      createdBy: SYSTEM_USER_ID,
-      updatedBy: SYSTEM_USER_ID,
-    });
-
-    await session.save();
-
     const token = await this.createToken({
       id: user.id,
-      sessionId: session.id,
-      hash,
     });
 
-    return plainToInstance(LoginResDto, {
-      userId: user.id,
-      ...token,
-    });
+    return new SuccessDto(
+      plainToInstance(LoginResDto, {
+        userId: user.id,
+        ...token,
+      }),
+    );
   }
 
-  async register(dto: RegisterReqDto): Promise<RegisterResDto> {
-    const { email, password } = dto;
-
+  async register(dto: RegisterReqDto): Promise<SuccessDto<RegisterResDto>> {
+    // Check if the user already exists
     const isExistUser = await UserEntity.exists({
-      where: { email },
+      where: { email: dto.email },
     });
 
     if (isExistUser) {
       throw new ValidationException(ErrorCode.E003);
     }
+
     // Register user
     const user = new UserEntity({
-      email,
-      password,
-      createdBy: SYSTEM_USER_ID,
-      updatedBy: SYSTEM_USER_ID,
+      email: dto.email,
+      password: dto.password,
     });
 
     await user.save();
-
-    const token = await this.createVerificationToken({ id: user.id });
-    const tokenExpiresIn = this.configService.getOrThrow(
-      'auth.confirmEmailExpires',
-      {
-        infer: true,
-      },
+    return new SuccessDto(
+      plainToInstance(RegisterResDto, {
+        userId: user.id,
+      }),
     );
-
-    await this.cacheManager.set(
-      createCacheKey(CacheKey.EMAIL_VERIFICATION, user.id),
-      token,
-      ms(tokenExpiresIn),
-    );
-    // TODO: sendEmailVerification
-    // await this.mailService.sendEmailVerification(email, token);
-    // await this.emailQueue.add(
-    //   JobName.EMAIL_VERIFICATION,
-    //   {
-    //     email: dto.email,
-    //     token,
-    //   } as IVerifyEmailJob,
-    //   // TODO attempts: 3 (retry 3 times)
-    //   { attempts: 1, backoff: { type: 'exponential', delay: 60000 } },
-    // );
-
-    return plainToInstance(RegisterResDto, {
-      userId: user.id,
-      token,
-    });
-  }
-
-  async logout(userToken: JwtPayloadType): Promise<void> {
-    await this.cacheManager.store.set<boolean>(
-      createCacheKey(CacheKey.SESSION_BLACKLIST, userToken.sessionId),
-      true,
-      userToken.exp * 1000 - Date.now(),
-    );
-    await SessionEntity.delete(userToken.sessionId);
   }
 
   async refreshToken(dto: RefreshReqDto): Promise<RefreshResDto> {
-    const { sessionId, hash } = this.verifyRefreshToken(dto.refreshToken);
-
-    const session = await SessionEntity.findOneBy({ id: sessionId });
-
-    if (!session || session.hash !== hash) {
-      throw new UnauthorizedException();
-    }
+    const { id } = this.verifyRefreshToken(dto.refreshToken);
     const user = await this.userRepository.findOneOrFail({
-      where: { id: session.userId },
+      where: { id },
       select: ['id'],
     });
 
-    const newHash = crypto
-      .createHash('sha256')
-      .update(randomStringGenerator())
-      .digest('hex');
-
-    SessionEntity.update(session.id, { hash: newHash });
-
     return await this.createToken({
       id: user.id,
-      sessionId: session.id,
-      hash: newHash,
     });
   }
 
-  async forgotPassword(email: string): Promise<ForgotPasswordResDto> {
-    const user = await UserEntity.findOneOrFail({
-      where: { email },
-      select: ['id', 'email'],
-    });
-
-    const resetToken = await this.createPasswordResetToken({ id: user.id });
-    // TODO: sendPasswordResetEmail
-    // await this.mailService.sendPasswordResetEmail(email, token);
-    return {
-      token: resetToken,
-    };
-  }
-
-  async resetPassword(
-    token: string,
-    password: string,
-  ): Promise<ResetPasswordResDto> {
-    let payload: { id: Uuid };
-
+  async verifyAccessToken(token: string): Promise<JwtPayloadType> {
+    let payload: JwtPayloadType;
     try {
-      payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.getOrThrow('auth.forgotSecret', {
-          infer: true,
-        }),
-      });
-    } catch {
-      throw new UnauthorizedException();
-    }
-    const user = await UserEntity.findOneByOrFail({ id: payload.id });
-
-    user.password = password;
-    user.updatedBy = SYSTEM_USER_ID;
-
-    await user.save();
-
-    await SessionEntity.delete({ userId: user.id });
-
-    return { message: 'Password has been reset successfully' };
-  }
-
-  async verifyEmail(token: string): Promise<{ message: string }> {
-    let payload: { id: Uuid };
-
-    try {
-      payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
-          infer: true,
-        }),
+      payload = this.jwtService.verify(token, {
+        secret: this.configService.getOrThrow('auth.secret', { infer: true }),
       });
     } catch {
       throw new UnauthorizedException();
     }
 
-    const user = await UserEntity.findOneByOrFail({ id: payload.id });
-    // TODO update user status : user.isEmailVerified = true;
-    user.updatedBy = SYSTEM_USER_ID;
-    await user.save();
-    return { message: 'Email verified successfully' };
+    return payload;
   }
 
-  async verifyForgotPassword(
-    token: string,
-  ): Promise<VerifyForgotPassordResDto> {
-    try {
-      // Xác thực token
-      await this.jwtService.verifyAsync(token, {
-        secret: this.configService.getOrThrow('auth.forgotSecret', {
-          infer: true,
-        }),
-      });
-      // Maybe return userId: payload.id
-      return { isValid: true };
-    } catch (error) {
-      return { isValid: false };
-    }
-  }
   private verifyRefreshToken(token: string): JwtRefreshPayloadType {
     try {
       return this.jwtService.verify(token, {
@@ -264,62 +130,8 @@ export class AuthService {
       throw new UnauthorizedException();
     }
   }
-  async verifyAccessToken(token: string): Promise<JwtPayloadType> {
-    let payload: JwtPayloadType;
-    try {
-      payload = this.jwtService.verify(token, {
-        secret: this.configService.getOrThrow('auth.secret', { infer: true }),
-      });
-    } catch {
-      throw new UnauthorizedException();
-    }
 
-    // Force logout if the session is in the blacklist
-    const isSessionBlacklisted = await this.cacheManager.store.get<boolean>(
-      createCacheKey(CacheKey.SESSION_BLACKLIST, payload.sessionId),
-    );
-
-    if (isSessionBlacklisted) {
-      throw new UnauthorizedException();
-    }
-
-    return payload;
-  }
-
-  private async createVerificationToken(data: { id: string }): Promise<string> {
-    return await this.jwtService.signAsync(
-      {
-        id: data.id,
-      },
-      {
-        secret: this.configService.getOrThrow('auth.confirmEmailSecret', {
-          infer: true,
-        }),
-        expiresIn: this.configService.getOrThrow('auth.confirmEmailExpires', {
-          infer: true,
-        }),
-      },
-    );
-  }
-  async resendVerificationEmail(email: string): Promise<{ token: string }> {
-    const user = await UserEntity.findOneByOrFail({ email });
-    // TODO: check if user is already verified
-    // if (user.isEmailVerified) {
-    //   throw new BadRequestException('Email đã được xác thực trước đó');
-    // }
-
-    // TODO: send email verification
-    // await this.emailService.sendVerificationEmail(user.email, token);
-    const token = await this.createVerificationToken({ id: user.id });
-
-    return { token };
-  }
-
-  private async createToken(data: {
-    id: string;
-    sessionId: string;
-    hash: string;
-  }): Promise<Token> {
+  private async createToken(data: { id: string }): Promise<Token> {
     const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
       infer: true,
     });
@@ -330,7 +142,6 @@ export class AuthService {
         {
           id: data.id,
           role: '', // TODO: add role
-          sessionId: data.sessionId,
         },
         {
           secret: this.configService.getOrThrow('auth.secret', { infer: true }),
@@ -339,8 +150,7 @@ export class AuthService {
       ),
       await this.jwtService.signAsync(
         {
-          sessionId: data.sessionId,
-          hash: data.hash,
+          id: data.id,
         },
         {
           secret: this.configService.getOrThrow('auth.refreshSecret', {
@@ -357,23 +167,5 @@ export class AuthService {
       refreshToken,
       tokenExpires,
     } as Token;
-  }
-
-  private async createPasswordResetToken(data: {
-    id: string;
-  }): Promise<string> {
-    return await this.jwtService.signAsync(
-      {
-        id: data.id,
-      },
-      {
-        secret: this.configService.getOrThrow('auth.forgotSecret', {
-          infer: true,
-        }),
-        expiresIn: this.configService.getOrThrow('auth.forgotExpires', {
-          infer: true,
-        }),
-      },
-    );
   }
 }

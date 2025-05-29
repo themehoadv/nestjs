@@ -52,77 +52,9 @@ interface IEnumFieldOptions extends IFieldOptions {
   enumName?: string;
 }
 
-interface IFileFieldOptions extends IFieldOptions {
-  mimeTypes?: string[];
-  maxSize?: number; // in bytes
-  isArray?: boolean;
-}
-
 type IBooleanFieldOptions = IFieldOptions;
 type ITokenFieldOptions = IFieldOptions;
 type IClassFieldOptions = IFieldOptions;
-
-export function FileField(
-  options: Omit<ApiPropertyOptions, 'type'> & IFileFieldOptions = {},
-): PropertyDecorator {
-  const decorators = [];
-
-  if (options.nullable) {
-    decorators.push(IsNullable({ each: options.each }));
-  } else {
-    decorators.push(IsDefined({ each: options.each }));
-  }
-
-  if (options.swagger !== false) {
-    const { required = true, ...restOptions } = options;
-    decorators.push(
-      ApiProperty({
-        type: 'string',
-        format: 'binary',
-        required: !!required,
-        ...restOptions,
-        description: options.description || 'File upload field',
-      }),
-    );
-  }
-
-  // Custom validation for file type and size would be handled in the controller/interceptor
-  // as class-validator doesn't have built-in file validators
-
-  return applyDecorators(...decorators);
-}
-
-export function FileFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type' | 'required'> &
-    IFileFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsOptional({ each: options.each }),
-    FileField({ required: false, ...options }),
-  );
-}
-
-// Array of Files Field Decorator
-export function FilesField(
-  options: Omit<ApiPropertyOptions, 'type'> & IFileFieldOptions = {},
-): PropertyDecorator {
-  return FileField({
-    ...options,
-    isArray: true,
-    description: options.description || 'Array of files',
-  });
-}
-
-// Optional Array of Files Field Decorator
-export function FilesFieldOptional(
-  options: Omit<ApiPropertyOptions, 'type' | 'required'> &
-    IFileFieldOptions = {},
-): PropertyDecorator {
-  return applyDecorators(
-    IsOptional({ each: options.each }),
-    FilesField({ required: false, ...options }),
-  );
-}
 
 export function NumberField(
   options: Omit<ApiPropertyOptions, 'type'> & INumberFieldOptions = {},

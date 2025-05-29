@@ -8,20 +8,19 @@ import { lowerCaseTransformer } from '@/utils/transformers/lower-case.transforme
 import { Transform } from 'class-transformer';
 
 export class CreateUserReqDto {
-  @StringField()
+  @StringField({ example: 'user1' })
   @Transform(lowerCaseTransformer)
   username: string;
 
-  @EmailField()
-  @Transform(lowerCaseTransformer)
+  @EmailField({ example: 'user@example.com' })
   email: string;
 
-  @PasswordField()
+  @PasswordField({ example: '12345678' })
   password: string;
 
-  @StringFieldOptional()
+  @StringFieldOptional({ example: "I'm a backend developer" })
   bio?: string;
 
-  @StringFieldOptional()
-  image?: string;
+  @StringFieldOptional({ example: 'https://i.pravatar.cc/150?img=5' })
+  avatar?: string;
 }

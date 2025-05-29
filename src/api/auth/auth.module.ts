@@ -11,16 +11,6 @@ import { AuthService } from './auth.service';
     UserModule,
     TypeOrmModule.forFeature([UserEntity]),
     JwtModule.register({}),
-    // MailModule,
-    //   BullModule.registerQueue({
-    //     name: QueueName.EMAIL,
-    //     prefix: QueuePrefix.AUTH,
-    //     streams: {
-    //       events: {
-    //         maxLen: 1000,
-    //       },
-    //     },
-    //   }),
   ],
   controllers: [AuthController],
   providers: [AuthService],
