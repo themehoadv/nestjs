@@ -1,7 +1,9 @@
 import { PostResDto } from '@/api/post/dto/post.res.dto';
 import { WrapperType } from '@/common/types/types';
+import { RoleType } from '@/constants/role-type';
 import {
   ClassField,
+  EnumField,
   StringField,
   StringFieldOptional,
 } from '@/decorators/field.decorators';
@@ -20,6 +22,10 @@ export class UserResDto {
   @StringField()
   @Expose()
   email: string;
+
+  @EnumField(() => RoleType)
+  @Expose()
+  role: string;
 
   @StringFieldOptional()
   @Expose()

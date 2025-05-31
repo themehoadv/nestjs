@@ -2,8 +2,11 @@ import { CursorPaginatedDto } from '@/common/dto/cursor-pagination/paginated.dto
 import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
 import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
+import { RoleType } from '@/constants/role-type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
+import { Roles } from '@/decorators/roles.decorator';
+import { RolesGuard } from '@/guards/roles.guard';
 import {
   Body,
   Controller,
@@ -15,6 +18,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateUserReqDto } from './dto/create-user.req.dto';
@@ -24,6 +28,7 @@ import { UpdateUserReqDto } from './dto/update-user.req.dto';
 import { UserResDto } from './dto/user.res.dto';
 import { UserService } from './user.service';
 
+@UseGuards(RolesGuard)
 @ApiTags('users')
 @Controller({
   path: 'users',
@@ -32,8 +37,9 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Roles([RoleType.USER])
   @ApiAuth({
-    type: UserResDto,
+    type: SuccessDto<UserResDto>,
     summary: 'Get current user',
   })
   @Get('me')
@@ -43,9 +49,10 @@ export class UserController {
     return await this.userService.findOne(userId);
   }
 
+  @Roles([])
   @Post()
   @ApiAuth({
-    type: UserResDto,
+    type: SuccessDto<UserResDto>,
     summary: 'Create user',
     statusCode: HttpStatus.CREATED,
   })
@@ -55,6 +62,7 @@ export class UserController {
     return await this.userService.create(createUserDto);
   }
 
+  @Roles([])
   @Get()
   @ApiAuth({
     type: UserResDto,
@@ -67,6 +75,7 @@ export class UserController {
     return await this.userService.findAll(reqDto);
   }
 
+  @Roles([])
   @Get('/load-more')
   @ApiAuth({
     type: UserResDto,
@@ -80,8 +89,9 @@ export class UserController {
     return await this.userService.loadMoreUsers(reqDto);
   }
 
+  @Roles([])
   @Get(':id')
-  @ApiAuth({ type: UserResDto, summary: 'Find user by id' })
+  @ApiAuth({ type: SuccessDto<UserResDto>, summary: 'Find user by id' })
   @ApiParam({ name: 'id', type: 'String' })
   async findUser(
     @Param('id', ParseUUIDPipe) id: Uuid,
@@ -89,8 +99,9 @@ export class UserController {
     return await this.userService.findOne(id);
   }
 
+  @Roles([])
   @Patch(':id')
-  @ApiAuth({ type: UserResDto, summary: 'Update user' })
+  @ApiAuth({ type: SuccessDto<UserResDto>, summary: 'Update user' })
   @ApiParam({ name: 'id', type: 'String' })
   updateUser(
     @Param('id', ParseUUIDPipe) id: Uuid,
@@ -99,13 +110,17 @@ export class UserController {
     return this.userService.update(id, reqDto);
   }
 
+  @Roles([])
   @Delete(':id')
   @ApiAuth({
+    type: SuccessDto<{ id: Uuid }>,
     summary: 'Delete user',
     errorResponses: [400, 401, 403, 404, 500],
   })
   @ApiParam({ name: 'id', type: 'String' })
-  removeUser(@Param('id', ParseUUIDPipe) id: Uuid) {
+  removeUser(
+    @Param('id', ParseUUIDPipe) id: Uuid,
+  ): Promise<SuccessDto<{ id: Uuid }>> {
     return this.userService.remove(id);
   }
 }

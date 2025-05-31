@@ -19,18 +19,21 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiPublic({
-    type: LoginResDto,
-    summary: 'Sign in',
+    type: SuccessDto<LoginResDto>,
+    summary: 'Login Email',
   })
-  @Post('email/login')
+  @Post('login')
   async signIn(
     @Body() userLogin: LoginReqDto,
   ): Promise<SuccessDto<LoginResDto>> {
     return await this.authService.signIn(userLogin);
   }
 
-  @ApiPublic()
-  @Post('email/register')
+  @ApiPublic({
+    type: SuccessDto<RefreshResDto>,
+    summary: 'Register Email',
+  })
+  @Post('register')
   async register(
     @Body() dto: RegisterReqDto,
   ): Promise<SuccessDto<RegisterResDto>> {
@@ -38,11 +41,13 @@ export class AuthController {
   }
 
   @ApiPublic({
-    type: RefreshResDto,
+    type: SuccessDto<RefreshResDto>,
     summary: 'Refresh token',
   })
-  @Post('refresh')
-  async refresh(@Body() dto: RefreshReqDto): Promise<RefreshResDto> {
+  @Post('refresh-token')
+  async refresh(
+    @Body() dto: RefreshReqDto,
+  ): Promise<SuccessDto<RefreshResDto>> {
     return await this.authService.refreshToken(dto);
   }
 }

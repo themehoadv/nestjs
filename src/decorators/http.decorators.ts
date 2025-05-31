@@ -18,6 +18,9 @@ import { STATUS_CODES } from 'http';
 import { Public } from './public.decorator';
 import { ApiPaginatedResponse } from './swagger.decorators';
 
+const DEFAULT_PAGINATION_TYPE: PaginationType = 'offset';
+const DEFAULT_STATUS_CODE = HttpStatus.OK;
+
 type ApiResponseType = number;
 type ApiAuthType = 'basic' | 'api-key' | 'jwt';
 type PaginationType = 'offset' | 'cursor';
@@ -32,93 +35,132 @@ interface IApiOptions<T extends Type<any>> {
   paginationType?: PaginationType;
 }
 
-type IApiPublicOptions = IApiOptions<Type<any>>;
+type IApiPublicOptions<T extends Type<any>> = IApiOptions<T>;
 
-interface IApiAuthOptions extends IApiOptions<Type<any>> {
+interface IApiAuthOptions<T extends Type<any>> extends IApiOptions<T> {
   auths?: ApiAuthType[];
 }
+const DEFAULT_ERROR_RESPONSES: ApiResponseType[] = [
+  HttpStatus.BAD_REQUEST,
+  // HttpStatus.FORBIDDEN,
+  // HttpStatus.NOT_FOUND,
+  // HttpStatus.UNPROCESSABLE_ENTITY,
+  // HttpStatus.INTERNAL_SERVER_ERROR,
+];
+const createSuccessResponse = <T extends Type<any>>(options: {
+  type?: T;
+  description?: string;
+  paginationType?: PaginationType;
+}) => ({
+  type: options.type,
+  description: options?.description ?? 'OK',
+  paginationType: options.paginationType || DEFAULT_PAGINATION_TYPE,
+});
 
-export const ApiPublic = (options: IApiPublicOptions = {}): MethodDecorator => {
-  const defaultStatusCode = HttpStatus.OK;
-  const defaultErrorResponses = [
-    HttpStatus.BAD_REQUEST,
-    // HttpStatus.FORBIDDEN,
-    // HttpStatus.NOT_FOUND,
-    // HttpStatus.UNPROCESSABLE_ENTITY,
-    // HttpStatus.INTERNAL_SERVER_ERROR,
-  ];
-  const isPaginated = options.isPaginated || false;
-  const ok = {
-    type: options.type,
-    description: options?.description ?? 'OK',
-    paginationType: options.paginationType || 'offset',
-  };
-
-  const errorResponses = (options.errorResponses || defaultErrorResponses)?.map(
-    (statusCode) =>
-      ApiResponse({
-        status: statusCode,
-        type: ErrorDto,
-        description: STATUS_CODES[statusCode],
-      }),
-  );
-
-  return applyDecorators(
-    Public(),
-    ApiOperation({ summary: options?.summary }),
-    HttpCode(options.statusCode || defaultStatusCode),
-    isPaginated ? ApiPaginatedResponse(ok) : ApiOkResponse(ok),
-    ...errorResponses,
+const createErrorResponses = (
+  errorCodes: ApiResponseType[] = DEFAULT_ERROR_RESPONSES,
+) => {
+  return errorCodes.map((statusCode) =>
+    ApiResponse({
+      status: statusCode,
+      type: ErrorDto,
+      description: STATUS_CODES[statusCode],
+    }),
   );
 };
 
-export const ApiAuth = (options: IApiAuthOptions = {}): MethodDecorator => {
-  const defaultStatusCode = HttpStatus.OK;
-  const defaultErrorResponses = [
-    HttpStatus.BAD_REQUEST,
-    // HttpStatus.UNAUTHORIZED,
-    // HttpStatus.FORBIDDEN,
-    // HttpStatus.NOT_FOUND,
-    // HttpStatus.UNPROCESSABLE_ENTITY,
-    // HttpStatus.INTERNAL_SERVER_ERROR,
-  ];
-  const isPaginated = options.isPaginated || false;
-  const ok = {
-    type: options.type,
-    description: options?.description ?? 'OK',
-    paginationType: options.paginationType || 'offset',
-  };
-  const auths = options.auths || ['jwt'];
+export const ApiPublic = <T extends Type<any>>(
+  options: IApiPublicOptions<T> = {},
+): MethodDecorator => {
+  const {
+    type,
+    summary,
+    description,
+    errorResponses = DEFAULT_ERROR_RESPONSES,
+    statusCode = DEFAULT_STATUS_CODE,
+    isPaginated = false,
+    paginationType = DEFAULT_PAGINATION_TYPE,
+  } = options;
 
-  const errorResponses = (options.errorResponses || defaultErrorResponses)?.map(
-    (statusCode) =>
-      ApiResponse({
-        status: statusCode,
-        type: ErrorDto,
-        description: STATUS_CODES[statusCode],
-      }),
+  const successResponse = createSuccessResponse({
+    type,
+    description,
+    paginationType,
+  });
+  const errorResponseDecorators = createErrorResponses(errorResponses);
+
+  return applyDecorators(
+    Public(),
+    ApiOperation({ summary }),
+    HttpCode(statusCode),
+    isPaginated
+      ? ApiPaginatedResponse(successResponse)
+      : ApiOkResponse(successResponse),
+    ...errorResponseDecorators,
+  );
+};
+
+export const ApiAuth = <T extends Type<any>>(
+  options: IApiAuthOptions<T> = {},
+): MethodDecorator => {
+  const {
+    type,
+    summary,
+    description,
+    errorResponses = DEFAULT_ERROR_RESPONSES,
+    statusCode = DEFAULT_STATUS_CODE,
+    isPaginated = false,
+    paginationType = DEFAULT_PAGINATION_TYPE,
+    auths = ['jwt'] as ApiAuthType[],
+  } = options;
+
+  const successResponse = createSuccessResponse({
+    type,
+    description,
+    paginationType,
+  });
+  const errorResponseDecorators = createErrorResponses(errorResponses);
+  const authDecorators = createAuthDecorators(auths);
+
+  const successResponseDecorator = getSuccessResponseDecorator(
+    statusCode,
+    isPaginated,
+    successResponse,
   );
 
-  const authDecorators = auths.map((auth) => {
+  return applyDecorators(
+    ApiOperation({ summary }),
+    HttpCode(statusCode),
+    successResponseDecorator,
+    ...authDecorators,
+    ...errorResponseDecorators,
+  );
+};
+
+// Helper functions
+const createAuthDecorators = (auths: ApiAuthType[]) => {
+  return auths.map((auth) => {
     switch (auth) {
       case 'basic':
         return ApiBasicAuth();
       case 'api-key':
         return ApiSecurity('Api-Key');
       case 'jwt':
+      default:
         return ApiBearerAuth();
     }
   });
+};
 
-  return applyDecorators(
-    ApiOperation({ summary: options?.summary }),
-    HttpCode(options.statusCode || defaultStatusCode),
-    isPaginated
-      ? ApiPaginatedResponse(ok)
-      : options.statusCode === 201
-        ? ApiCreatedResponse(ok)
-        : ApiOkResponse(ok),
-    ...authDecorators,
-    ...errorResponses,
-  );
+const getSuccessResponseDecorator = (
+  statusCode: HttpStatus,
+  isPaginated: boolean,
+  successResponse: any,
+) => {
+  if (isPaginated) {
+    return ApiPaginatedResponse(successResponse);
+  }
+  return statusCode === HttpStatus.CREATED
+    ? ApiCreatedResponse(successResponse)
+    : ApiOkResponse(successResponse);
 };

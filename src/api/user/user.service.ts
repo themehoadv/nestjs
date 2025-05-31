@@ -7,11 +7,12 @@ import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { buildPaginator } from '@/utils/cursor-pagination';
 import { paginate } from '@/utils/offset-pagination';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import assert from 'assert';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
+import { RoleEntity } from '../role/entities/role.entity';
 import { CreateUserReqDto } from './dto/create-user.req.dto';
 import { ListUserReqDto } from './dto/list-user.req.dto';
 import { LoadMoreUsersReqDto } from './dto/load-more-users.req.dto';
@@ -25,39 +26,50 @@ export class UserService {
 
   constructor(
     @InjectRepository(UserEntity)
+    @InjectRepository(RoleEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
   async create(dto: CreateUserReqDto): Promise<SuccessDto<UserResDto>> {
-    const { username, email, password, bio, avatar } = dto;
+    const { username, email, password, bio, avatar, roleId } = dto;
 
-    // check uniqueness of username/email
-    const user = await this.userRepository.findOne({
-      where: [
-        {
-          username,
-        },
-        {
-          email,
-        },
-      ],
+    // 1. Check uniqueness of username/email
+    const existingUser = await this.userRepository.findOne({
+      where: [{ username }, { email }],
     });
 
-    if (user) {
+    if (existingUser) {
       throw new ValidationException(ErrorCode.E001);
     }
 
-    const newUser = new UserEntity({
+    let role: RoleEntity;
+
+    if (roleId) {
+      role = await RoleEntity.findOneBy({ id: roleId });
+      if (!role) {
+        throw new NotFoundException('Specified role not found');
+      }
+    } else {
+      role = await RoleEntity.findOneBy({ name: 'USER' });
+      if (!role) {
+        throw new Error('Default USER role not configured');
+      }
+    }
+
+    // 3. Create and save user
+    const newUser = this.userRepository.create({
       username,
       email,
-      password,
+      password, // Ensure password is hashed (use @BeforeInsert hook)
       bio,
       avatar,
+      role, // Assign the determined role
     });
 
     const savedUser = await this.userRepository.save(newUser);
     this.logger.debug(savedUser);
 
+    // 4. Return response (excluding sensitive data)
     return new SuccessDto(plainToInstance(UserResDto, savedUser));
   }
 
@@ -122,7 +134,7 @@ export class UserService {
     return new SuccessDto(updatedUser.toDto(UserResDto));
   }
 
-  async remove(id: Uuid) {
+  async remove(id: Uuid): Promise<SuccessDto<{ id: Uuid }>> {
     await this.userRepository.findOneByOrFail({ id });
     await this.userRepository.softDelete(id);
     return new SuccessDto({ id });

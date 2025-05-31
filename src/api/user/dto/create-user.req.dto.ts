@@ -1,8 +1,10 @@
+import { Uuid } from '@/common/types/common.type';
 import {
   EmailField,
   PasswordField,
   StringField,
   StringFieldOptional,
+  UUIDFieldOptional,
 } from '@/decorators/field.decorators';
 import { lowerCaseTransformer } from '@/utils/transformers/lower-case.transformer';
 import { Transform } from 'class-transformer';
@@ -15,7 +17,7 @@ export class CreateUserReqDto {
   @EmailField({ example: 'user@example.com' })
   email: string;
 
-  @PasswordField({ example: '12345678' })
+  @PasswordField({ example: '123456789admin' })
   password: string;
 
   @StringFieldOptional({ example: "I'm a backend developer" })
@@ -23,4 +25,7 @@ export class CreateUserReqDto {
 
   @StringFieldOptional({ example: 'https://i.pravatar.cc/150?img=5' })
   avatar?: string;
+
+  @UUIDFieldOptional({ example: 'e5768aef-39d4-456a-a4b2-ce3433dabbf3' })
+  roleId?: Uuid;
 }

@@ -4,6 +4,6 @@ export class RegisterReqDto {
   @EmailField({ example: 'user@example.com' })
   email!: string;
 
-  @PasswordField({ example: '12345678' })
+  @PasswordField({ example: '123456789user' })
   password!: string;
 }

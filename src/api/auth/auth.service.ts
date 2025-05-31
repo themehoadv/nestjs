@@ -2,6 +2,7 @@ import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Branded } from '@/common/types/types';
 import { AllConfigType } from '@/config/config.type';
 import { ErrorCode } from '@/constants/error-code.constant';
+import { RoleType } from '@/constants/role-type';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { verifyPassword } from '@/utils/password.util';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import ms from 'ms';
 import { Repository } from 'typeorm';
+import { RoleEntity } from '../role/entities/role.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { LoginReqDto } from './dto/login.req.dto';
 import { LoginResDto } from './dto/login.res.dto';
@@ -23,7 +25,7 @@ import { JwtRefreshPayloadType } from './types/jwt-refresh-payload.type';
 
 type Token = Branded<
   {
-    accessToken: string;
+    token: string;
     refreshToken: string;
     tokenExpires: number;
   },
@@ -36,6 +38,7 @@ export class AuthService {
     private readonly configService: ConfigService<AllConfigType>,
     private readonly jwtService: JwtService,
     @InjectRepository(UserEntity)
+    @InjectRepository(RoleEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
@@ -45,10 +48,10 @@ export class AuthService {
    * @returns LoginResDto
    */
   async signIn(dto: LoginReqDto): Promise<SuccessDto<LoginResDto>> {
-    const { email, password } = dto;
+    const { username, password } = dto;
     const user = await this.userRepository.findOne({
-      where: { email },
-      select: ['id', 'email', 'password'],
+      where: [{ email: username }, { username }],
+      select: ['id', 'email', 'username', 'password', 'role'],
     });
 
     const isPasswordValid =
@@ -60,6 +63,7 @@ export class AuthService {
 
     const token = await this.createToken({
       id: user.id,
+      role: user.role,
     });
 
     return new SuccessDto(
@@ -71,7 +75,7 @@ export class AuthService {
   }
 
   async register(dto: RegisterReqDto): Promise<SuccessDto<RegisterResDto>> {
-    // Check if the user already exists
+    // 1. Check if user already exists
     const isExistUser = await UserEntity.exists({
       where: { email: dto.email },
     });
@@ -80,13 +84,24 @@ export class AuthService {
       throw new ValidationException(ErrorCode.E003);
     }
 
-    // Register user
+    // 2. Find USER role from database
+    const userRole = await RoleEntity.findOne({
+      where: { name: RoleType.USER },
+    });
+
+    if (!userRole) {
+      throw new Error('Default USER role not found in database');
+    }
+
     const user = new UserEntity({
       email: dto.email,
       password: dto.password,
+      role: userRole,
     });
 
     await user.save();
+
+    // 4. Return response
     return new SuccessDto(
       plainToInstance(RegisterResDto, {
         userId: user.id,
@@ -94,16 +109,24 @@ export class AuthService {
     );
   }
 
-  async refreshToken(dto: RefreshReqDto): Promise<RefreshResDto> {
+  async refreshToken(dto: RefreshReqDto): Promise<SuccessDto<RefreshResDto>> {
     const { id } = this.verifyRefreshToken(dto.refreshToken);
     const user = await this.userRepository.findOneOrFail({
       where: { id },
-      select: ['id'],
+      select: ['id', 'role'],
     });
 
-    return await this.createToken({
+    const token = await this.createToken({
       id: user.id,
+      role: user.role,
     });
+
+    return new SuccessDto(
+      plainToInstance(LoginResDto, {
+        userId: user.id,
+        ...token,
+      }),
+    );
   }
 
   async verifyAccessToken(token: string): Promise<JwtPayloadType> {
@@ -131,17 +154,21 @@ export class AuthService {
     }
   }
 
-  private async createToken(data: { id: string }): Promise<Token> {
+  private async createToken(data: {
+    id: string;
+    role: { name: string };
+  }): Promise<Token> {
     const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
       infer: true,
     });
     const tokenExpires = Date.now() + ms(tokenExpiresIn);
+    const role = data.role?.name;
 
-    const [accessToken, refreshToken] = await Promise.all([
+    const [token, refreshToken] = await Promise.all([
       await this.jwtService.signAsync(
         {
           id: data.id,
-          role: '', // TODO: add role
+          role, // TODO: add role
         },
         {
           secret: this.configService.getOrThrow('auth.secret', { infer: true }),
@@ -151,6 +178,7 @@ export class AuthService {
       await this.jwtService.signAsync(
         {
           id: data.id,
+          role,
         },
         {
           secret: this.configService.getOrThrow('auth.refreshSecret', {
@@ -163,7 +191,7 @@ export class AuthService {
       ),
     ]);
     return {
-      accessToken,
+      token,
       refreshToken,
       tokenExpires,
     } as Token;

@@ -1,4 +1,5 @@
 import { PostEntity } from '@/api/post/entities/post.entity';
+import { RoleEntity } from '@/api/role/entities/role.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import { hashPassword as hashPass } from '@/utils/password.util';
@@ -9,6 +10,8 @@ import {
   DeleteDateColumn,
   Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   Relation,
@@ -56,6 +59,10 @@ export class UserEntity extends AbstractEntity {
 
   @OneToMany(() => PostEntity, (post) => post.user)
   posts: Relation<PostEntity[]>;
+
+  @ManyToOne(() => RoleEntity, { eager: true })
+  @JoinColumn({ name: 'role_id' })
+  role: RoleEntity;
 
   @BeforeInsert()
   @BeforeUpdate()

@@ -9,7 +9,7 @@ export class LoginResDto {
 
   @Expose()
   @StringField()
-  accessToken!: string;
+  token!: string;
 
   @Expose()
   @StringField()

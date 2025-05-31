@@ -2,7 +2,7 @@ import { NumberField, StringField } from '@/decorators/field.decorators';
 
 export class RefreshResDto {
   @StringField()
-  accessToken!: string;
+  token!: string;
 
   @StringField()
   refreshToken!: string;
