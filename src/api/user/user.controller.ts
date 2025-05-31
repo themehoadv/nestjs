@@ -1,5 +1,5 @@
 import { CursorPaginatedDto } from '@/common/dto/cursor-pagination/paginated.dto';
-import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
+import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
 import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
 import { RoleType } from '@/constants/role-type';
@@ -71,7 +71,7 @@ export class UserController {
   })
   async findAllUsers(
     @Query() reqDto: ListUserReqDto,
-  ): Promise<OffsetPaginatedDto<UserResDto>> {
+  ): Promise<OffsetPaginatedListDto<UserResDto>> {
     return await this.userService.findAll(reqDto);
   }
 

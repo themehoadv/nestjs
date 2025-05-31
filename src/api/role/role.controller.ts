@@ -1,3 +1,4 @@
+import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
 import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ApiAuth } from '@/decorators/http.decorators';
@@ -11,12 +12,16 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateRoleReqDto } from './dto/create-role.req.dto';
+import { ListRoleReqDto } from './dto/list-role.req.dto';
 import { RoleResDto } from './dto/role.res.dto';
+import { UpdateRoleReqDto } from './dto/update-role.req.dto';
 import { RoleService } from './role.service';
 
 @UseGuards(RolesGuard)
@@ -47,8 +52,10 @@ export class RoleController {
     type: SuccessDto<RoleResDto[]>,
     summary: 'List roles',
   })
-  async findAllRoles(): Promise<SuccessDto<RoleResDto[]>> {
-    return await this.roleService.findAll();
+  async findAllRoles(
+    @Query() reqDto: ListRoleReqDto,
+  ): Promise<OffsetPaginatedListDto<RoleResDto>> {
+    return await this.roleService.findAll(reqDto);
   }
 
   @Roles([])
@@ -62,6 +69,17 @@ export class RoleController {
   }
 
   @Roles([])
+  @Patch(':id')
+  @ApiAuth({ type: SuccessDto<RoleResDto>, summary: 'Update role' })
+  @ApiParam({ name: 'id', type: 'String' })
+  updateRole(
+    @Param('id', ParseUUIDPipe) id: Uuid,
+    @Body() reqDto: UpdateRoleReqDto,
+  ): Promise<SuccessDto<RoleResDto>> {
+    return this.roleService.update(id, reqDto);
+  }
+
+  @Roles([])
   @Delete(':id')
   @ApiAuth({
     type: SuccessDto<{ id: Uuid }>,
@@ -71,7 +89,7 @@ export class RoleController {
   @ApiParam({ name: 'id', type: 'String' })
   removeRole(
     @Param('id', ParseUUIDPipe) id: Uuid,
-  ): Promise<SuccessDto<{ id: Uuid }>> {
+  ): Promise<SuccessDto<string>> {
     return this.roleService.remove(id);
   }
 }

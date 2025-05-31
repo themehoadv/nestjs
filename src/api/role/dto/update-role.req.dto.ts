@@ -1,12 +1,9 @@
-import {
-  StringField,
-  StringFieldOptional,
-} from '@/decorators/field.decorators';
+import { StringFieldOptional } from '@/decorators/field.decorators';
 import { upperCaseTransformer } from '@/utils/transformers/upper-case.transformer';
 import { Transform } from 'class-transformer';
 
-export class CreateRoleReqDto {
-  @StringField({ example: 'USER' })
+export class UpdateRoleReqDto {
+  @StringFieldOptional({ example: 'USER' })
   @Transform(upperCaseTransformer)
   name: string;
 

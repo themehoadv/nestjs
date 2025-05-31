@@ -1,12 +1,13 @@
 import { CursorPaginationDto } from '@/common/dto/cursor-pagination/cursor-pagination.dto';
 import { CursorPaginatedDto } from '@/common/dto/cursor-pagination/paginated.dto';
-import { OffsetPaginatedDto } from '@/common/dto/offset-pagination/paginated.dto';
+import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
+import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
 import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { buildPaginator } from '@/utils/cursor-pagination';
-import { paginate } from '@/utils/offset-pagination';
+import { paginateList } from '@/utils/offset-list';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import assert from 'assert';
@@ -75,15 +76,22 @@ export class UserService {
 
   async findAll(
     reqDto: ListUserReqDto,
-  ): Promise<OffsetPaginatedDto<UserResDto>> {
+  ): Promise<OffsetPaginatedListDto<UserResDto>> {
     const query = this.userRepository
       .createQueryBuilder('user')
       .orderBy('user.createdAt', 'DESC');
-    const [users, metaDto] = await paginate<UserEntity>(query, reqDto, {
+    const [users, count] = await paginateList<UserEntity>(query, reqDto, {
       skipCount: false,
       takeAll: false,
     });
-    return new OffsetPaginatedDto(plainToInstance(UserResDto, users), metaDto);
+
+    const result = new OffsetListDto(
+      plainToInstance(UserResDto, users),
+      count,
+      reqDto,
+    );
+
+    return new OffsetPaginatedListDto(result);
   }
 
   async loadMoreUsers(
@@ -126,11 +134,23 @@ export class UserService {
     updateUserDto: UpdateUserReqDto,
   ): Promise<SuccessDto<UserResDto>> {
     const user = await this.userRepository.findOneByOrFail({ id });
+    const { bio, avatar, roleId } = updateUserDto;
 
-    user.bio = updateUserDto.bio;
-    user.avatar = updateUserDto.avatar;
+    let role: RoleEntity;
 
-    const updatedUser = await this.userRepository.save(user);
+    if (roleId) {
+      role = await RoleEntity.findOneBy({ id: roleId });
+      if (!role) {
+        throw new NotFoundException('Specified role not found');
+      }
+    }
+
+    user.bio = bio;
+    user.avatar = avatar;
+    user.role = role;
+
+    const updatedUser = await UserEntity.save(user);
+
     return new SuccessDto(updatedUser.toDto(UserResDto));
   }
 
