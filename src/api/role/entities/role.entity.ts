@@ -12,11 +12,14 @@ export class RoleEntity extends AbstractEntity {
   @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_role_id' })
   id!: Uuid;
 
-  @Column({ type: 'varchar', length: 50, unique: true, nullable: false })
+  @Column()
   name!: string;
 
+  @Column({ type: 'varchar', length: 50, unique: true, nullable: false })
+  code!: string;
+
   @Column({ type: 'text', nullable: true })
-  description?: string;
+  remark?: string;
 
   @DeleteDateColumn({
     name: 'deleted_at',

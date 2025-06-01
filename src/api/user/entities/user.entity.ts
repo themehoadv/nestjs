@@ -60,9 +60,12 @@ export class UserEntity extends AbstractEntity {
   @OneToMany(() => PostEntity, (post) => post.user)
   posts: Relation<PostEntity[]>;
 
+  @Column({ name: 'role_id', type: 'uuid' })
+  roleId!: Uuid;
+
   @ManyToOne(() => RoleEntity, { eager: true })
   @JoinColumn({ name: 'role_id' })
-  role: RoleEntity;
+  role: Relation<RoleEntity>;
 
   @BeforeInsert()
   @BeforeUpdate()

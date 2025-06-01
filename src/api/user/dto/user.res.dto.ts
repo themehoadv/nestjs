@@ -1,19 +1,30 @@
 import { PostResDto } from '@/api/post/dto/post.res.dto';
+import { Uuid } from '@/common/types/common.type';
 import { WrapperType } from '@/common/types/types';
-import { RoleType } from '@/constants/role-type';
 import {
   ClassField,
-  EnumField,
   StringField,
   StringFieldOptional,
+  UUIDField,
 } from '@/decorators/field.decorators';
 import { Exclude, Expose } from 'class-transformer';
 
 @Exclude()
-export class UserResDto {
+class UserRoleResDto {
   @StringField()
   @Expose()
-  id: string;
+  name: string;
+
+  @StringField()
+  @Expose()
+  code: string;
+}
+
+@Exclude()
+export class UserResDto {
+  @UUIDField()
+  @Expose()
+  id: Uuid;
 
   @StringField()
   @Expose()
@@ -23,10 +34,6 @@ export class UserResDto {
   @Expose()
   email: string;
 
-  @EnumField(() => RoleType)
-  @Expose()
-  role: string;
-
   @StringFieldOptional()
   @Expose()
   bio?: string;
@@ -34,6 +41,14 @@ export class UserResDto {
   @StringField()
   @Expose()
   avatar: string;
+
+  @UUIDField()
+  @Expose()
+  roleId: Uuid;
+
+  @ClassField(() => UserRoleResDto)
+  @Expose()
+  role: WrapperType<UserRoleResDto>;
 
   @ClassField(() => PostResDto)
   @Expose()

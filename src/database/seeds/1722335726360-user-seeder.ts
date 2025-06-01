@@ -1,5 +1,6 @@
 import { RoleEntity } from '@/api/role/entities/role.entity';
 import { UserEntity } from '@/api/user/entities/user.entity';
+import { RoleType } from '@/constants/role-type';
 import { DataSource } from 'typeorm';
 import { Seeder, SeederFactoryManager } from 'typeorm-extension';
 
@@ -13,8 +14,10 @@ export class UserSeeder1722335726360 implements Seeder {
     const userRepository = dataSource.getRepository(UserEntity);
     const roleRepository = dataSource.getRepository(RoleEntity);
 
-    const adminRole = await roleRepository.findOneBy({ name: 'ADMIN' });
-    const userRole = await roleRepository.findOneBy({ name: 'USER' });
+    const [adminRole, userRole] = await Promise.all([
+      roleRepository.findOneBy({ code: RoleType.Admin }),
+      roleRepository.findOneBy({ code: RoleType.Common }),
+    ]);
 
     if (!adminRole || !userRole) {
       throw new Error('Roles not found. Run RoleSeeder first!');
@@ -29,14 +32,14 @@ export class UserSeeder1722335726360 implements Seeder {
           password: '123456789admin',
           bio: "hello, i'm a backend developer",
           avatar: 'https://i.pravatar.cc/150?img=5',
-          role: adminRole,
+          roleId: adminRole.id,
         }),
       );
     }
 
     const userFactory = factoryManager.get(UserEntity);
     await userFactory.saveMany(5, {
-      role: userRole,
+      roleId: userRole.id,
     });
   }
 }

@@ -24,10 +24,10 @@ export class RoleService {
   ) {}
 
   async create(dto: CreateRoleReqDto): Promise<SuccessDto<RoleResDto>> {
-    const { name, description } = dto;
+    const { name, code, remark } = dto;
 
     const existingRole = await this.roleRepository.findOne({
-      where: { name },
+      where: { code },
     });
 
     if (existingRole) {
@@ -36,7 +36,8 @@ export class RoleService {
 
     const newRole = this.roleRepository.create({
       name,
-      description,
+      code,
+      remark,
     });
 
     const savedRole = await this.roleRepository.save(newRole);
@@ -62,7 +63,13 @@ export class RoleService {
     return new SuccessDto(plainToInstance(RoleResDto, updatedRole));
   }
 
-  async findAll(
+  async findAll(): Promise<SuccessDto<RoleResDto[]>> {
+    const roles = await RoleEntity.find();
+
+    return new SuccessDto(plainToInstance(RoleResDto, roles));
+  }
+
+  async findList(
     reqDto: ListRoleReqDto,
   ): Promise<OffsetPaginatedListDto<RoleResDto>> {
     const query = this.roleRepository

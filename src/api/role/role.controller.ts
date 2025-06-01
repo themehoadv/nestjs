@@ -47,15 +47,25 @@ export class RoleController {
   }
 
   @Roles([])
-  @Get()
+  @Get('/all')
   @ApiAuth({
     type: SuccessDto<RoleResDto[]>,
+    summary: 'All roles',
+  })
+  async findAllRoles(): Promise<SuccessDto<RoleResDto[]>> {
+    return await this.roleService.findAll();
+  }
+
+  @Roles([])
+  @Get()
+  @ApiAuth({
+    type: OffsetPaginatedListDto<RoleResDto>,
     summary: 'List roles',
   })
-  async findAllRoles(
+  async findRoleList(
     @Query() reqDto: ListRoleReqDto,
   ): Promise<OffsetPaginatedListDto<RoleResDto>> {
-    return await this.roleService.findAll(reqDto);
+    return await this.roleService.findList(reqDto);
   }
 
   @Roles([])

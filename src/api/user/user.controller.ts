@@ -1,4 +1,3 @@
-import { CursorPaginatedDto } from '@/common/dto/cursor-pagination/paginated.dto';
 import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
 import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
@@ -23,7 +22,6 @@ import {
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateUserReqDto } from './dto/create-user.req.dto';
 import { ListUserReqDto } from './dto/list-user.req.dto';
-import { LoadMoreUsersReqDto } from './dto/load-more-users.req.dto';
 import { UpdateUserReqDto } from './dto/update-user.req.dto';
 import { UserResDto } from './dto/user.res.dto';
 import { UserService } from './user.service';
@@ -37,7 +35,7 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Roles([RoleType.USER])
+  @Roles([RoleType.Common])
   @ApiAuth({
     type: SuccessDto<UserResDto>,
     summary: 'Get current user',
@@ -76,20 +74,6 @@ export class UserController {
   }
 
   @Roles([])
-  @Get('/load-more')
-  @ApiAuth({
-    type: UserResDto,
-    summary: 'Load more users',
-    isPaginated: true,
-    paginationType: 'cursor',
-  })
-  async loadMoreUsers(
-    @Query() reqDto: LoadMoreUsersReqDto,
-  ): Promise<CursorPaginatedDto<UserResDto>> {
-    return await this.userService.loadMoreUsers(reqDto);
-  }
-
-  @Roles([])
   @Get(':id')
   @ApiAuth({ type: SuccessDto<UserResDto>, summary: 'Find user by id' })
   @ApiParam({ name: 'id', type: 'String' })
@@ -113,14 +97,14 @@ export class UserController {
   @Roles([])
   @Delete(':id')
   @ApiAuth({
-    type: SuccessDto<{ id: Uuid }>,
+    type: SuccessDto<string>,
     summary: 'Delete user',
     errorResponses: [400, 401, 403, 404, 500],
   })
   @ApiParam({ name: 'id', type: 'String' })
   removeUser(
     @Param('id', ParseUUIDPipe) id: Uuid,
-  ): Promise<SuccessDto<{ id: Uuid }>> {
+  ): Promise<SuccessDto<string>> {
     return this.userService.remove(id);
   }
 }

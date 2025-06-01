@@ -8,16 +8,18 @@ export class RoleSeeder implements Seeder {
 
   public async run(dataSource: DataSource): Promise<any> {
     const roleRepository = dataSource.getRepository(RoleEntity);
-    const roleAdmin = await roleRepository.findOneBy({ name: RoleType.ADMIN });
+    const roleAdmin = await roleRepository.findOneBy({ code: RoleType.Admin });
     if (!roleAdmin) {
       await roleRepository.insert([
         {
-          name: RoleType.ADMIN,
-          description: 'Quản trị viên hệ thống',
+          name: 'Quản trị viên',
+          code: RoleType.Admin,
+          remark: 'Quản trị viên hệ thống',
         },
         {
-          name: RoleType.USER,
-          description: 'Người dùng thông thường',
+          name: 'Người dùng',
+          code: RoleType.Common,
+          remark: 'Người dùng thông thường',
         },
       ]);
     }

@@ -18,7 +18,11 @@ export class RoleResDto {
 
   @StringField()
   @Expose()
-  description: string;
+  code: string;
+
+  @StringField()
+  @Expose()
+  remark: string;
 
   @ClassField(() => Date)
   @Expose()

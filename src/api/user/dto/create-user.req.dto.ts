@@ -14,10 +14,10 @@ export class CreateUserReqDto {
   @Transform(lowerCaseTransformer)
   username: string;
 
-  @EmailField({ example: 'user@example.com' })
+  @EmailField({ example: 'user1@example.com' })
   email: string;
 
-  @PasswordField({ example: '123456789admin' })
+  @PasswordField({ example: '123456789user' })
   password: string;
 
   @StringFieldOptional({ example: "I'm a backend developer" })
@@ -26,6 +26,6 @@ export class CreateUserReqDto {
   @StringFieldOptional({ example: 'https://i.pravatar.cc/150?img=5' })
   avatar?: string;
 
-  @UUIDFieldOptional({ example: 'e5768aef-39d4-456a-a4b2-ce3433dabbf3' })
+  @UUIDFieldOptional({ example: '13d4f96e-f32c-459a-bd9d-d612bdf2ffa2' })
   roleId?: Uuid;
 }

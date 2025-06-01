@@ -86,7 +86,7 @@ export class AuthService {
 
     // 2. Find USER role from database
     const userRole = await RoleEntity.findOne({
-      where: { name: RoleType.USER },
+      where: { name: RoleType.Common },
     });
 
     if (!userRole) {
@@ -156,39 +156,30 @@ export class AuthService {
 
   private async createToken(data: {
     id: string;
-    role: { name: string };
+    role: { code: string };
   }): Promise<Token> {
     const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
       infer: true,
     });
     const tokenExpires = Date.now() + ms(tokenExpiresIn);
-    const role = data.role?.name;
 
+    const payload = {
+      id: data.id,
+      role: data.role?.code,
+    };
     const [token, refreshToken] = await Promise.all([
-      await this.jwtService.signAsync(
-        {
-          id: data.id,
-          role, // TODO: add role
-        },
-        {
-          secret: this.configService.getOrThrow('auth.secret', { infer: true }),
-          expiresIn: tokenExpiresIn,
-        },
-      ),
-      await this.jwtService.signAsync(
-        {
-          id: data.id,
-          role,
-        },
-        {
-          secret: this.configService.getOrThrow('auth.refreshSecret', {
-            infer: true,
-          }),
-          expiresIn: this.configService.getOrThrow('auth.refreshExpires', {
-            infer: true,
-          }),
-        },
-      ),
+      await this.jwtService.signAsync(payload, {
+        secret: this.configService.getOrThrow('auth.secret', { infer: true }),
+        expiresIn: tokenExpiresIn,
+      }),
+      await this.jwtService.signAsync(payload, {
+        secret: this.configService.getOrThrow('auth.refreshSecret', {
+          infer: true,
+        }),
+        expiresIn: this.configService.getOrThrow('auth.refreshExpires', {
+          infer: true,
+        }),
+      }),
     ]);
     return {
       token,
