@@ -11,6 +11,7 @@ export default setSeederFactory(UserEntity, (fake) => {
   user.password = '123456789user';
   user.bio = fake.lorem.sentence();
   user.avatar = fake.image.avatar();
+  user.phone = fake.phone.number();
 
   return user;
 });

@@ -50,6 +50,9 @@ export class UserEntity extends AbstractEntity {
   @Column({ default: '' })
   avatar?: string;
 
+  @Column({ default: '' })
+  phone?: string;
+
   @DeleteDateColumn({
     name: 'deleted_at',
     type: 'timestamptz',

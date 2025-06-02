@@ -1,11 +1,10 @@
 import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
 import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
-import { RoleType } from '@/constants/role-type';
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
-import { Roles } from '@/decorators/roles.decorator';
-import { RolesGuard } from '@/guards/roles.guard';
+import { Permissions } from '@/decorators/permissions.decorator';
+import { PermissionsGuard } from '@/guards/permission.guard';
 import {
   Body,
   Controller,
@@ -20,13 +19,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { PermissionAction } from '../permission/entities/permission.entity';
 import { CreateUserReqDto } from './dto/create-user.req.dto';
 import { ListUserReqDto } from './dto/list-user.req.dto';
 import { UpdateUserReqDto } from './dto/update-user.req.dto';
 import { UserResDto } from './dto/user.res.dto';
 import { UserService } from './user.service';
 
-@UseGuards(RolesGuard)
+@UseGuards(PermissionsGuard)
 @ApiTags('users')
 @Controller({
   path: 'users',
@@ -35,7 +35,6 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Roles([RoleType.Common])
   @ApiAuth({
     type: SuccessDto<UserResDto>,
     summary: 'Get current user',
@@ -47,8 +46,8 @@ export class UserController {
     return await this.userService.findOne(userId);
   }
 
-  @Roles([])
   @Post()
+  @Permissions(PermissionAction.CREATE, 'User')
   @ApiAuth({
     type: SuccessDto<UserResDto>,
     summary: 'Create user',
@@ -60,7 +59,6 @@ export class UserController {
     return await this.userService.create(createUserDto);
   }
 
-  @Roles([])
   @Get()
   @ApiAuth({
     type: UserResDto,
@@ -73,7 +71,6 @@ export class UserController {
     return await this.userService.findAll(reqDto);
   }
 
-  @Roles([])
   @Get(':id')
   @ApiAuth({ type: SuccessDto<UserResDto>, summary: 'Find user by id' })
   @ApiParam({ name: 'id', type: 'String' })
@@ -83,7 +80,6 @@ export class UserController {
     return await this.userService.findOne(id);
   }
 
-  @Roles([])
   @Patch(':id')
   @ApiAuth({ type: SuccessDto<UserResDto>, summary: 'Update user' })
   @ApiParam({ name: 'id', type: 'String' })
@@ -94,7 +90,6 @@ export class UserController {
     return this.userService.update(id, reqDto);
   }
 
-  @Roles([])
   @Delete(':id')
   @ApiAuth({
     type: SuccessDto<string>,

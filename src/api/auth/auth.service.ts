@@ -1,4 +1,5 @@
 import { SuccessDto } from '@/common/dto/sucess.dto';
+import { Uuid } from '@/common/types/common.type';
 import { Branded } from '@/common/types/types';
 import { AllConfigType } from '@/config/config.type';
 import { ErrorCode } from '@/constants/error-code.constant';
@@ -61,10 +62,7 @@ export class AuthService {
       throw new UnauthorizedException();
     }
 
-    const token = await this.createToken({
-      id: user.id,
-      role: user.role,
-    });
+    const token = await this.createToken(user);
 
     return new SuccessDto(
       plainToInstance(LoginResDto, {
@@ -86,7 +84,7 @@ export class AuthService {
 
     // 2. Find USER role from database
     const userRole = await RoleEntity.findOne({
-      where: { name: RoleType.Common },
+      where: { code: RoleType.Common },
     });
 
     if (!userRole) {
@@ -116,10 +114,7 @@ export class AuthService {
       select: ['id', 'role'],
     });
 
-    const token = await this.createToken({
-      id: user.id,
-      role: user.role,
-    });
+    const token = await this.createToken(user);
 
     return new SuccessDto(
       plainToInstance(LoginResDto, {
@@ -154,19 +149,26 @@ export class AuthService {
     }
   }
 
-  private async createToken(data: {
-    id: string;
-    role: { code: string };
-  }): Promise<Token> {
+  private async createToken(user: UserEntity): Promise<Token> {
     const tokenExpiresIn = this.configService.getOrThrow('auth.expires', {
       infer: true,
     });
     const tokenExpires = Date.now() + ms(tokenExpiresIn);
 
+    const permissions = await this.getUserPermissions(user.id); // Hoặc user.role.permissions nếu eager loaded
+
     const payload = {
-      id: data.id,
-      role: data.role?.code,
+      id: user.id,
+      role: {
+        id: user.role.id,
+        code: user.role.code,
+        permissions: permissions.map((p) => ({
+          entity: p.entity,
+          actions: p.actions,
+        })),
+      },
     };
+
     const [token, refreshToken] = await Promise.all([
       await this.jwtService.signAsync(payload, {
         secret: this.configService.getOrThrow('auth.secret', { infer: true }),
@@ -186,5 +188,17 @@ export class AuthService {
       refreshToken,
       tokenExpires,
     } as Token;
+  }
+
+  // Lấy permissions (có thể cache lại)
+  private async getUserPermissions(userId: Uuid) {
+    const user = await UserEntity.createQueryBuilder('user')
+      .leftJoinAndSelect('user.role', 'role')
+      .leftJoinAndSelect('role.permissions', 'permissions')
+      .where('user.id = :id', { id: userId })
+      .getOne();
+    const permissions = user.role.permissions;
+
+    return permissions;
   }
 }

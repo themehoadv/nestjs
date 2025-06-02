@@ -4,7 +4,7 @@ import {
   PasswordField,
   StringField,
   StringFieldOptional,
-  UUIDFieldOptional,
+  UUIDField,
 } from '@/decorators/field.decorators';
 import { lowerCaseTransformer } from '@/utils/transformers/lower-case.transformer';
 import { Transform } from 'class-transformer';
@@ -20,12 +20,15 @@ export class CreateUserReqDto {
   @PasswordField({ example: '123456789user' })
   password: string;
 
+  @UUIDField({ example: 'ae389ea4-3106-4865-aee4-820bd21edb7d' })
+  roleId: Uuid;
+
   @StringFieldOptional({ example: "I'm a backend developer" })
   bio?: string;
 
   @StringFieldOptional({ example: 'https://i.pravatar.cc/150?img=5' })
   avatar?: string;
 
-  @UUIDFieldOptional({ example: '13d4f96e-f32c-459a-bd9d-d612bdf2ffa2' })
-  roleId?: Uuid;
+  @StringFieldOptional({ example: '0987654321' })
+  phone?: string;
 }

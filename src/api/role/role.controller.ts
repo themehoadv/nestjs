@@ -2,8 +2,6 @@ import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginated
 import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ApiAuth } from '@/decorators/http.decorators';
-import { Roles } from '@/decorators/roles.decorator';
-import { RolesGuard } from '@/guards/roles.guard';
 import {
   Body,
   Controller,
@@ -15,7 +13,6 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
 import { CreateRoleReqDto } from './dto/create-role.req.dto';
@@ -24,7 +21,6 @@ import { RoleResDto } from './dto/role.res.dto';
 import { UpdateRoleReqDto } from './dto/update-role.req.dto';
 import { RoleService } from './role.service';
 
-@UseGuards(RolesGuard)
 @ApiTags('roles')
 @Controller({
   path: 'roles',
@@ -33,7 +29,6 @@ import { RoleService } from './role.service';
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 
-  @Roles([])
   @Post()
   @ApiAuth({
     type: SuccessDto<RoleResDto>,
@@ -46,7 +41,6 @@ export class RoleController {
     return await this.roleService.create(createRoleDto);
   }
 
-  @Roles([])
   @Get('/all')
   @ApiAuth({
     type: SuccessDto<RoleResDto[]>,
@@ -56,7 +50,6 @@ export class RoleController {
     return await this.roleService.findAll();
   }
 
-  @Roles([])
   @Get()
   @ApiAuth({
     type: OffsetPaginatedListDto<RoleResDto>,
@@ -68,7 +61,6 @@ export class RoleController {
     return await this.roleService.findList(reqDto);
   }
 
-  @Roles([])
   @Get(':id')
   @ApiAuth({ type: SuccessDto<RoleResDto>, summary: 'Find role by id' })
   @ApiParam({ name: 'id', type: 'String' })
@@ -78,7 +70,6 @@ export class RoleController {
     return await this.roleService.findOne(id);
   }
 
-  @Roles([])
   @Patch(':id')
   @ApiAuth({ type: SuccessDto<RoleResDto>, summary: 'Update role' })
   @ApiParam({ name: 'id', type: 'String' })
@@ -89,7 +80,6 @@ export class RoleController {
     return this.roleService.update(id, reqDto);
   }
 
-  @Roles([])
   @Delete(':id')
   @ApiAuth({
     type: SuccessDto<{ id: Uuid }>,

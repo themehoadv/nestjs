@@ -1,10 +1,13 @@
+import { PermissionEntity } from '@/api/permission/entities/permission.entity';
 import { Uuid } from '@/common/types/common.type';
 import { AbstractEntity } from '@/database/entities/abstract.entity';
 import {
   Column,
   DeleteDateColumn,
   Entity,
+  ManyToMany,
   PrimaryGeneratedColumn,
+  Relation,
 } from 'typeorm';
 
 @Entity('roles')
@@ -20,6 +23,9 @@ export class RoleEntity extends AbstractEntity {
 
   @Column({ type: 'text', nullable: true })
   remark?: string;
+
+  @ManyToMany(() => PermissionEntity, (permission) => permission.roles)
+  permissions: Relation<PermissionEntity[]>;
 
   @DeleteDateColumn({
     name: 'deleted_at',

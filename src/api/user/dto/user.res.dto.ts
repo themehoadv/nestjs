@@ -38,9 +38,13 @@ export class UserResDto {
   @Expose()
   bio?: string;
 
-  @StringField()
+  @StringFieldOptional()
   @Expose()
-  avatar: string;
+  avatar?: string;
+
+  @StringFieldOptional()
+  @Expose()
+  phone?: string;
 
   @UUIDField()
   @Expose()

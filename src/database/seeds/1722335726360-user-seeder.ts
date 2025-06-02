@@ -32,6 +32,7 @@ export class UserSeeder1722335726360 implements Seeder {
           password: '123456789admin',
           bio: "hello, i'm a backend developer",
           avatar: 'https://i.pravatar.cc/150?img=5',
+          phone: '0987654321',
           roleId: adminRole.id,
         }),
       );

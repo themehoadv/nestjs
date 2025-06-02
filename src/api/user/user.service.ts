@@ -5,7 +5,7 @@ import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { paginateList } from '@/utils/offset-list';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import assert from 'assert';
 import { plainToInstance } from 'class-transformer';
@@ -28,7 +28,7 @@ export class UserService {
   ) {}
 
   async create(dto: CreateUserReqDto): Promise<SuccessDto<UserResDto>> {
-    const { username, email, password, bio, avatar, roleId } = dto;
+    const { username, email, password, bio, avatar, phone, roleId } = dto;
 
     // 1. Check uniqueness of username/email
     const existingUser = await this.userRepository.findOne({
@@ -48,6 +48,7 @@ export class UserService {
       password,
       bio,
       avatar,
+      phone,
       roleId: role.id,
     });
 
@@ -82,7 +83,6 @@ export class UserService {
     assert(id, 'id is required');
     const user = await this.userRepository.findOneByOrFail({
       id,
-      // relations: ['chapters', 'author'],
     });
 
     return new SuccessDto(user.toDto(UserResDto));
@@ -92,21 +92,18 @@ export class UserService {
     id: Uuid,
     updateUserDto: UpdateUserReqDto,
   ): Promise<SuccessDto<UserResDto>> {
-    const user = await this.userRepository.findOneByOrFail({ id });
-    const { bio, avatar, roleId } = updateUserDto;
+    const user = await UserEntity.findOneByOrFail({ id });
+    const { bio, avatar, phone, roleId } = updateUserDto;
 
-    let role: RoleEntity;
+    user.bio = bio || user.bio;
+    user.avatar = avatar || user.avatar;
+    user.phone = phone || user.phone;
 
     if (roleId) {
-      role = await RoleEntity.findOneBy({ id: roleId });
-      if (!role) {
-        throw new NotFoundException('Specified role not found');
-      }
+      const role = await RoleEntity.findOneByOrFail({ id: roleId });
+      user.roleId = roleId;
+      user.role = role;
     }
-
-    user.bio = bio;
-    user.avatar = avatar;
-    user.roleId = roleId;
 
     const updatedUser = await UserEntity.save(user);
 
