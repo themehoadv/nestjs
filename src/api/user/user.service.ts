@@ -1,11 +1,10 @@
 import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
 import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
-import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
 import { paginateList } from '@/utils/offset-list';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import assert from 'assert';
 import { plainToInstance } from 'class-transformer';
@@ -19,18 +18,15 @@ import { UserEntity } from './entities/user.entity';
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
-
   constructor(
     @InjectRepository(UserEntity)
     @InjectRepository(RoleEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
 
-  async create(dto: CreateUserReqDto): Promise<SuccessDto<UserResDto>> {
+  async create(dto: CreateUserReqDto): Promise<UserResDto> {
     const { username, email, password, bio, avatar, phone, roleId } = dto;
 
-    // 1. Check uniqueness of username/email
     const existingUser = await this.userRepository.findOne({
       where: [{ username }, { email }],
     });
@@ -41,7 +37,6 @@ export class UserService {
 
     const role = await RoleEntity.findOneByOrFail({ id: roleId });
 
-    // 3. Create and save user
     const newUser = this.userRepository.create({
       username,
       email,
@@ -54,8 +49,7 @@ export class UserService {
 
     const savedUser = await this.userRepository.save(newUser);
 
-    // 4. Return response (excluding sensitive data)
-    return new SuccessDto(plainToInstance(UserResDto, savedUser));
+    return plainToInstance(UserResDto, savedUser);
   }
 
   async findAll(
@@ -79,40 +73,47 @@ export class UserService {
     return new OffsetPaginatedListDto(result);
   }
 
-  async findOne(id: Uuid): Promise<SuccessDto<UserResDto>> {
+  async findOne(id: Uuid): Promise<UserResDto> {
     assert(id, 'id is required');
     const user = await this.userRepository.findOneByOrFail({
       id,
     });
 
-    return new SuccessDto(user.toDto(UserResDto));
+    return user.toDto(UserResDto);
   }
 
-  async update(
-    id: Uuid,
-    updateUserDto: UpdateUserReqDto,
-  ): Promise<SuccessDto<UserResDto>> {
-    const user = await UserEntity.findOneByOrFail({ id });
-    const { bio, avatar, phone, roleId } = updateUserDto;
+  async update(id: Uuid, updateUserDto: UpdateUserReqDto): Promise<UserResDto> {
+    await UserEntity.findOneByOrFail({ id });
 
-    user.bio = bio || user.bio;
-    user.avatar = avatar || user.avatar;
-    user.phone = phone || user.phone;
+    const { email, username, bio, avatar, phone, roleId } = updateUserDto;
+    const updateData: Partial<UserEntity> = {
+      email,
+      username,
+      bio,
+      avatar,
+      phone,
+    };
+
+    // Remove undefined properties to avoid overwriting with undefined
+    Object.keys(updateData).forEach(
+      (key) => updateData[key] === undefined && delete updateData[key],
+    );
 
     if (roleId) {
       const role = await RoleEntity.findOneByOrFail({ id: roleId });
-      user.roleId = roleId;
-      user.role = role;
+      updateData.roleId = roleId;
+      updateData.role = role;
     }
 
-    const updatedUser = await UserEntity.save(user);
+    await UserEntity.update(id, updateData);
+    const updatedUser = await UserEntity.findOneBy({ id });
 
-    return new SuccessDto(updatedUser.toDto(UserResDto));
+    return updatedUser.toDto(UserResDto);
   }
 
-  async remove(id: Uuid): Promise<SuccessDto<string>> {
+  async remove(id: Uuid): Promise<string> {
     const user = await this.userRepository.findOneByOrFail({ id });
     await this.userRepository.softDelete(id);
-    return new SuccessDto(user.username);
+    return user.username;
   }
 }

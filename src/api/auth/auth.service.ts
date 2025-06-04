@@ -1,4 +1,3 @@
-import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
 import { Branded } from '@/common/types/types';
 import { AllConfigType } from '@/config/config.type';
@@ -48,7 +47,7 @@ export class AuthService {
    * @param dto LoginReqDto
    * @returns LoginResDto
    */
-  async signIn(dto: LoginReqDto): Promise<SuccessDto<LoginResDto>> {
+  async signIn(dto: LoginReqDto): Promise<LoginResDto> {
     const { username, password } = dto;
     const user = await this.userRepository.findOne({
       where: [{ email: username }, { username }],
@@ -64,15 +63,13 @@ export class AuthService {
 
     const token = await this.createToken(user);
 
-    return new SuccessDto(
-      plainToInstance(LoginResDto, {
-        userId: user.id,
-        ...token,
-      }),
-    );
+    return plainToInstance(LoginResDto, {
+      userId: user.id,
+      ...token,
+    });
   }
 
-  async register(dto: RegisterReqDto): Promise<SuccessDto<RegisterResDto>> {
+  async register(dto: RegisterReqDto): Promise<RegisterResDto> {
     // 1. Check if user already exists
     const isExistUser = await UserEntity.exists({
       where: { email: dto.email },
@@ -100,14 +97,12 @@ export class AuthService {
     await user.save();
 
     // 4. Return response
-    return new SuccessDto(
-      plainToInstance(RegisterResDto, {
-        userId: user.id,
-      }),
-    );
+    return plainToInstance(RegisterResDto, {
+      userId: user.id,
+    });
   }
 
-  async refreshToken(dto: RefreshReqDto): Promise<SuccessDto<RefreshResDto>> {
+  async refreshToken(dto: RefreshReqDto): Promise<RefreshResDto> {
     const { id } = this.verifyRefreshToken(dto.refreshToken);
     const user = await this.userRepository.findOneOrFail({
       where: { id },
@@ -116,12 +111,10 @@ export class AuthService {
 
     const token = await this.createToken(user);
 
-    return new SuccessDto(
-      plainToInstance(LoginResDto, {
-        userId: user.id,
-        ...token,
-      }),
-    );
+    return plainToInstance(LoginResDto, {
+      userId: user.id,
+      ...token,
+    });
   }
 
   async verifyAccessToken(token: string): Promise<JwtPayloadType> {

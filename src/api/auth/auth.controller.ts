@@ -1,4 +1,3 @@
-import { SuccessDto } from '@/common/dto/sucess.dto';
 import { ApiPublic } from '@/decorators/http.decorators';
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -19,35 +18,29 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiPublic({
-    type: SuccessDto<LoginResDto>,
+    type: LoginResDto,
     summary: 'Login Email',
   })
   @Post('login')
-  async signIn(
-    @Body() userLogin: LoginReqDto,
-  ): Promise<SuccessDto<LoginResDto>> {
+  async signIn(@Body() userLogin: LoginReqDto): Promise<LoginResDto> {
     return await this.authService.signIn(userLogin);
   }
 
   @ApiPublic({
-    type: SuccessDto<RefreshResDto>,
+    type: RefreshResDto,
     summary: 'Register Email',
   })
   @Post('register')
-  async register(
-    @Body() dto: RegisterReqDto,
-  ): Promise<SuccessDto<RegisterResDto>> {
+  async register(@Body() dto: RegisterReqDto): Promise<RegisterResDto> {
     return await this.authService.register(dto);
   }
 
   @ApiPublic({
-    type: SuccessDto<RefreshResDto>,
+    type: RefreshResDto,
     summary: 'Refresh token',
   })
   @Post('refresh-token')
-  async refresh(
-    @Body() dto: RefreshReqDto,
-  ): Promise<SuccessDto<RefreshResDto>> {
+  async refresh(@Body() dto: RefreshReqDto): Promise<RefreshResDto> {
     return await this.authService.refreshToken(dto);
   }
 }

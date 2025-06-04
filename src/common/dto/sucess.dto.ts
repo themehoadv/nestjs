@@ -29,23 +29,4 @@ export class SuccessDto<TData> {
     this.message = message;
     this.success = success;
   }
-
-  // static ApiResponse<T>(options: {
-  //   type: new (...args: any[]) => T; // Changed from Type<T> to constructor signature
-  //   description?: string;
-  //   isArray?: boolean;
-  //   example?: Partial<T>;
-  // }): MethodDecorator {
-  //   return applyDecorators(
-  //     ApiProperty({
-  //       type: SuccessDto as unknown as new () => SuccessDto<T>,
-  //       description: options.description,
-  //     }),
-  //     ApiProperty({
-  //       type: options.type,
-  //       isArray: options.isArray,
-  //       example: options.example,
-  //     })(SuccessDto.prototype as object, 'result') as MethodDecorator,
-  //   );
-  // }
 }

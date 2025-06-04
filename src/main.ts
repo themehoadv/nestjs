@@ -14,6 +14,7 @@ import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AuthService } from './api/auth/auth.service';
 import { AppModule } from './app.module';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { type AllConfigType } from './config/config.type';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { AuthGuard } from './guards/auth.guard';
@@ -75,6 +76,7 @@ async function bootstrap() {
     // new RolesGuard(reflector),
     new PermissionsGuard(reflector),
   );
+  app.useGlobalInterceptors(new ResponseInterceptor(reflector));
   app.useGlobalFilters(new GlobalExceptionFilter(configService));
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,5 +1,4 @@
 import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
-import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ApiAuth } from '@/decorators/http.decorators';
 import {
@@ -31,22 +30,21 @@ export class RoleController {
 
   @Post()
   @ApiAuth({
-    type: SuccessDto<RoleResDto>,
+    type: RoleResDto,
     summary: 'Create role',
     statusCode: HttpStatus.CREATED,
   })
   async createRole(
     @Body() createRoleDto: CreateRoleReqDto,
-  ): Promise<SuccessDto<RoleResDto>> {
+  ): Promise<RoleResDto> {
     return await this.roleService.create(createRoleDto);
   }
 
   @Get('/all')
   @ApiAuth({
-    type: SuccessDto<RoleResDto[]>,
     summary: 'All roles',
   })
-  async findAllRoles(): Promise<SuccessDto<RoleResDto[]>> {
+  async findAllRoles(): Promise<RoleResDto[]> {
     return await this.roleService.findAll();
   }
 
@@ -62,34 +60,29 @@ export class RoleController {
   }
 
   @Get(':id')
-  @ApiAuth({ type: SuccessDto<RoleResDto>, summary: 'Find role by id' })
+  @ApiAuth({ type: RoleResDto, summary: 'Find role by id' })
   @ApiParam({ name: 'id', type: 'String' })
-  async findRole(
-    @Param('id', ParseUUIDPipe) id: Uuid,
-  ): Promise<SuccessDto<RoleResDto>> {
+  async findRole(@Param('id', ParseUUIDPipe) id: Uuid): Promise<RoleResDto> {
     return await this.roleService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiAuth({ type: SuccessDto<RoleResDto>, summary: 'Update role' })
+  @ApiAuth({ type: RoleResDto, summary: 'Update role' })
   @ApiParam({ name: 'id', type: 'String' })
   updateRole(
     @Param('id', ParseUUIDPipe) id: Uuid,
     @Body() reqDto: UpdateRoleReqDto,
-  ): Promise<SuccessDto<RoleResDto>> {
+  ): Promise<RoleResDto> {
     return this.roleService.update(id, reqDto);
   }
 
   @Delete(':id')
   @ApiAuth({
-    type: SuccessDto<{ id: Uuid }>,
+    type: String,
     summary: 'Delete role',
-    errorResponses: [400, 401, 403, 404, 500],
   })
   @ApiParam({ name: 'id', type: 'String' })
-  removeRole(
-    @Param('id', ParseUUIDPipe) id: Uuid,
-  ): Promise<SuccessDto<string>> {
+  removeRole(@Param('id', ParseUUIDPipe) id: Uuid): Promise<string> {
     return this.roleService.remove(id);
   }
 }

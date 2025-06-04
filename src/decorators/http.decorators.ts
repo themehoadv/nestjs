@@ -1,9 +1,11 @@
 import { ErrorDto } from '@/common/dto/error.dto';
+import { createSuccessResponseType } from '@/common/dto/success-response.dto';
 import {
+  applyDecorators,
   HttpCode,
   HttpStatus,
+  SetMetadata,
   type Type,
-  applyDecorators,
 } from '@nestjs/common';
 import {
   ApiBasicAuth,
@@ -20,19 +22,22 @@ import { ApiPaginatedResponse } from './swagger.decorators';
 
 const DEFAULT_PAGINATION_TYPE: PaginationType = 'offset';
 const DEFAULT_STATUS_CODE = HttpStatus.OK;
+const RESPONSE_MESSAGE_KEY = 'responseMessage';
+const RESPONSE_CODE_KEY = 'responseCode';
 
 type ApiResponseType = number;
 type ApiAuthType = 'basic' | 'api-key' | 'jwt';
 type PaginationType = 'offset' | 'cursor';
 
 interface IApiOptions<T extends Type<any>> {
-  type?: T;
+  type?: T; // Type của data (không phải của toàn bộ response)
   summary?: string;
   description?: string;
   errorResponses?: ApiResponseType[];
   statusCode?: HttpStatus;
   isPaginated?: boolean;
   paginationType?: PaginationType;
+  successMessage?: string;
 }
 
 type IApiPublicOptions<T extends Type<any>> = IApiOptions<T>;
@@ -40,6 +45,7 @@ type IApiPublicOptions<T extends Type<any>> = IApiOptions<T>;
 interface IApiAuthOptions<T extends Type<any>> extends IApiOptions<T> {
   auths?: ApiAuthType[];
 }
+
 const DEFAULT_ERROR_RESPONSES: ApiResponseType[] = [
   HttpStatus.BAD_REQUEST,
   // HttpStatus.FORBIDDEN,
@@ -47,15 +53,23 @@ const DEFAULT_ERROR_RESPONSES: ApiResponseType[] = [
   // HttpStatus.UNPROCESSABLE_ENTITY,
   // HttpStatus.INTERNAL_SERVER_ERROR,
 ];
+
 const createSuccessResponse = <T extends Type<any>>(options: {
   type?: T;
   description?: string;
   paginationType?: PaginationType;
-}) => ({
-  type: options.type,
-  description: options?.description ?? 'OK',
-  paginationType: options.paginationType || DEFAULT_PAGINATION_TYPE,
-});
+}) => {
+  // Nếu có type được truyền vào, wrap nó trong SuccessResponseDto
+  const responseType = options.type
+    ? createSuccessResponseType(options.type)
+    : undefined;
+
+  return {
+    type: responseType,
+    description: options?.description ?? 'OK',
+    paginationType: options.paginationType || DEFAULT_PAGINATION_TYPE,
+  };
+};
 
 const createErrorResponses = (
   errorCodes: ApiResponseType[] = DEFAULT_ERROR_RESPONSES,
@@ -80,6 +94,7 @@ export const ApiPublic = <T extends Type<any>>(
     statusCode = DEFAULT_STATUS_CODE,
     isPaginated = false,
     paginationType = DEFAULT_PAGINATION_TYPE,
+    successMessage = description, // Use description as fallback for success message
   } = options;
 
   const successResponse = createSuccessResponse({
@@ -91,6 +106,8 @@ export const ApiPublic = <T extends Type<any>>(
 
   return applyDecorators(
     Public(),
+    SetMetadata(RESPONSE_MESSAGE_KEY, successMessage), // Store success message
+    SetMetadata(RESPONSE_CODE_KEY, statusCode), // Store status code
     ApiOperation({ summary }),
     HttpCode(statusCode),
     isPaginated
@@ -112,6 +129,7 @@ export const ApiAuth = <T extends Type<any>>(
     isPaginated = false,
     paginationType = DEFAULT_PAGINATION_TYPE,
     auths = ['jwt'] as ApiAuthType[],
+    successMessage = description, // Use description as fallback for success message
   } = options;
 
   const successResponse = createSuccessResponse({
@@ -129,6 +147,8 @@ export const ApiAuth = <T extends Type<any>>(
   );
 
   return applyDecorators(
+    SetMetadata(RESPONSE_MESSAGE_KEY, successMessage), // Store success message
+    SetMetadata(RESPONSE_CODE_KEY, statusCode), // Store status code
     ApiOperation({ summary }),
     HttpCode(statusCode),
     successResponseDecorator,
@@ -163,4 +183,10 @@ const getSuccessResponseDecorator = (
   return statusCode === HttpStatus.CREATED
     ? ApiCreatedResponse(successResponse)
     : ApiOkResponse(successResponse);
+};
+
+// Export metadata keys for use in interceptor
+export const API_RESPONSE_METADATA = {
+  MESSAGE: RESPONSE_MESSAGE_KEY,
+  CODE: RESPONSE_CODE_KEY,
 };

@@ -1,6 +1,5 @@
 import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
 import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
-import { SuccessDto } from '@/common/dto/sucess.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
@@ -23,7 +22,7 @@ export class RoleService {
     private readonly roleRepository: Repository<RoleEntity>,
   ) {}
 
-  async create(dto: CreateRoleReqDto): Promise<SuccessDto<RoleResDto>> {
+  async create(dto: CreateRoleReqDto): Promise<RoleResDto> {
     const { name, code, remark } = dto;
 
     const existingRole = await this.roleRepository.findOne({
@@ -42,12 +41,9 @@ export class RoleService {
 
     const savedRole = await this.roleRepository.save(newRole);
 
-    return new SuccessDto(plainToInstance(RoleResDto, savedRole));
+    return plainToInstance(RoleResDto, savedRole);
   }
-  async update(
-    id: Uuid,
-    dto: UpdateRoleReqDto,
-  ): Promise<SuccessDto<RoleResDto>> {
+  async update(id: Uuid, dto: UpdateRoleReqDto): Promise<RoleResDto> {
     const existingRole = await RoleEntity.findOne({
       where: { name: dto.name },
     });
@@ -60,13 +56,13 @@ export class RoleService {
 
     const updatedRole = await RoleEntity.findOneByOrFail({ id });
 
-    return new SuccessDto(plainToInstance(RoleResDto, updatedRole));
+    return plainToInstance(RoleResDto, updatedRole);
   }
 
-  async findAll(): Promise<SuccessDto<RoleResDto[]>> {
+  async findAll(): Promise<RoleResDto[]> {
     const roles = await RoleEntity.find();
 
-    return new SuccessDto(plainToInstance(RoleResDto, roles));
+    return plainToInstance(RoleResDto, roles);
   }
 
   async findList(
@@ -89,16 +85,16 @@ export class RoleService {
     return new OffsetPaginatedListDto(result);
   }
 
-  async findOne(id: Uuid): Promise<SuccessDto<RoleResDto>> {
+  async findOne(id: Uuid): Promise<RoleResDto> {
     assert(id, 'id is required');
     const role = await this.roleRepository.findOneByOrFail({ id });
 
-    return new SuccessDto(role.toDto(RoleResDto));
+    return role.toDto(RoleResDto);
   }
 
-  async remove(id: Uuid): Promise<SuccessDto<string>> {
+  async remove(id: Uuid): Promise<string> {
     const role = await this.roleRepository.findOneByOrFail({ id });
     await this.roleRepository.softDelete(id);
-    return new SuccessDto(role.name);
+    return role.name;
   }
 }
