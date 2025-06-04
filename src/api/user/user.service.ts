@@ -1,5 +1,4 @@
 import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
-import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
@@ -52,9 +51,7 @@ export class UserService {
     return plainToInstance(UserResDto, savedUser);
   }
 
-  async findAll(
-    reqDto: ListUserReqDto,
-  ): Promise<OffsetPaginatedListDto<UserResDto>> {
+  async findAll(reqDto: ListUserReqDto): Promise<OffsetListDto<UserResDto>> {
     const query = this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.role', 'role')
@@ -64,13 +61,7 @@ export class UserService {
       takeAll: false,
     });
 
-    const result = new OffsetListDto(
-      plainToInstance(UserResDto, users),
-      count,
-      reqDto,
-    );
-
-    return new OffsetPaginatedListDto(result);
+    return new OffsetListDto(plainToInstance(UserResDto, users), count, reqDto);
   }
 
   async findOne(id: Uuid): Promise<UserResDto> {

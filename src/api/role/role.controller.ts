@@ -1,4 +1,4 @@
-import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
+import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ApiAuth } from '@/decorators/http.decorators';
 import {
@@ -50,12 +50,12 @@ export class RoleController {
 
   @Get()
   @ApiAuth({
-    type: OffsetPaginatedListDto<RoleResDto>,
+    type: OffsetListDto<RoleResDto>,
     summary: 'List roles',
   })
   async findRoleList(
     @Query() reqDto: ListRoleReqDto,
-  ): Promise<OffsetPaginatedListDto<RoleResDto>> {
+  ): Promise<OffsetListDto<RoleResDto>> {
     return await this.roleService.findList(reqDto);
   }
 

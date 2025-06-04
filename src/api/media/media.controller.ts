@@ -1,4 +1,3 @@
-import { SuccessDto } from '@/common/dto/sucess.dto';
 import { ApiAuth } from '@/decorators/http.decorators';
 import {
   Controller,
@@ -8,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { MediaResDto } from './dto/media.res.dto';
 import { MediaService } from './media.service';
 
 @ApiTags('media')
@@ -33,13 +31,11 @@ export class MediaController {
     },
   })
   @ApiAuth({
-    type: SuccessDto<MediaResDto>,
+    type: String,
     summary: 'Upload a media file',
   })
   @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
-  ): Promise<SuccessDto<MediaResDto>> {
+  async uploadFile(@UploadedFile() file: Express.Multer.File): Promise<string> {
     return this.mediaService.uploadFile(file);
   }
 }

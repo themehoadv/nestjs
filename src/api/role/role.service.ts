@@ -1,5 +1,4 @@
 import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
-import { OffsetPaginatedListDto } from '@/common/dto/offset-pagination/paginatedList.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ErrorCode } from '@/constants/error-code.constant';
 import { ValidationException } from '@/exceptions/validation.exception';
@@ -65,9 +64,7 @@ export class RoleService {
     return plainToInstance(RoleResDto, roles);
   }
 
-  async findList(
-    reqDto: ListRoleReqDto,
-  ): Promise<OffsetPaginatedListDto<RoleResDto>> {
+  async findList(reqDto: ListRoleReqDto): Promise<OffsetListDto<RoleResDto>> {
     const query = this.roleRepository
       .createQueryBuilder('user')
       .orderBy('user.createdAt', 'DESC');
@@ -76,13 +73,7 @@ export class RoleService {
       takeAll: false,
     });
 
-    const result = new OffsetListDto(
-      plainToInstance(RoleResDto, roles),
-      count,
-      reqDto,
-    );
-
-    return new OffsetPaginatedListDto(result);
+    return new OffsetListDto(plainToInstance(RoleResDto, roles), count, reqDto);
   }
 
   async findOne(id: Uuid): Promise<RoleResDto> {

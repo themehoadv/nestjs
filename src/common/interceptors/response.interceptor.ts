@@ -32,7 +32,7 @@ export class ResponseInterceptor implements NestInterceptor {
         status: true,
         code: statusCode,
         message: responseMessage || this.getDefaultMessage(statusCode),
-        data,
+        result: data,
       })),
     );
   }
