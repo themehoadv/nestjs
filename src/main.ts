@@ -18,7 +18,6 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { type AllConfigType } from './config/config.type';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
 import { AuthGuard } from './guards/auth.guard';
-import { PermissionsGuard } from './guards/permission.guard';
 import setupSwagger from './utils/setup-swagger';
 
 async function bootstrap() {
@@ -74,7 +73,7 @@ async function bootstrap() {
   app.useGlobalGuards(
     new AuthGuard(reflector, app.get(AuthService)),
     // new RolesGuard(reflector),
-    new PermissionsGuard(reflector),
+    // new PermissionsGuard(reflector),
   );
   app.useGlobalInterceptors(new ResponseInterceptor(reflector));
   app.useGlobalFilters(new GlobalExceptionFilter(configService));

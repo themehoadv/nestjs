@@ -1,4 +1,3 @@
-import { Uuid } from '@/common/types/common.type';
 import { Branded } from '@/common/types/types';
 import { AllConfigType } from '@/config/config.type';
 import { ErrorCode } from '@/constants/error-code.constant';
@@ -148,17 +147,17 @@ export class AuthService {
     });
     const tokenExpires = Date.now() + ms(tokenExpiresIn);
 
-    const permissions = await this.getUserPermissions(user.id); // Hoặc user.role.permissions nếu eager loaded
+    // const permissions = await this.getUserPermissions(user.id); // Hoặc user.role.permissions nếu eager loaded
 
     const payload = {
       id: user.id,
       role: {
         id: user.role.id,
         code: user.role.code,
-        permissions: permissions.map((p) => ({
-          entity: p.entity,
-          actions: p.actions,
-        })),
+        // permissions: permissions.map((p) => ({
+        //   entity: p.entity,
+        //   actions: p.actions,
+        // })),
       },
     };
 
@@ -184,14 +183,14 @@ export class AuthService {
   }
 
   // Lấy permissions (có thể cache lại)
-  private async getUserPermissions(userId: Uuid) {
-    const user = await UserEntity.createQueryBuilder('user')
-      .leftJoinAndSelect('user.role', 'role')
-      .leftJoinAndSelect('role.permissions', 'permissions')
-      .where('user.id = :id', { id: userId })
-      .getOne();
-    const permissions = user.role.permissions;
+  // private async getUserPermissions(userId: Uuid) {
+  //   const user = await UserEntity.createQueryBuilder('user')
+  //     .leftJoinAndSelect('user.role', 'role')
+  //     .leftJoinAndSelect('role.permissions', 'permissions')
+  //     .where('user.id = :id', { id: userId })
+  //     .getOne();
+  //   const permissions = user.role.permissions;
 
-    return permissions;
-  }
+  //   return permissions;
+  // }
 }

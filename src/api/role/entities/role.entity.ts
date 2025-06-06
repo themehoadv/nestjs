@@ -24,7 +24,7 @@ export class RoleEntity extends AbstractEntity {
   @Column({ type: 'text', nullable: true })
   remark?: string;
 
-  @ManyToMany(() => PermissionEntity, (permission) => permission.roles)
+  @ManyToMany(() => PermissionEntity, (permission) => permission.role)
   permissions: Relation<PermissionEntity[]>;
 
   @DeleteDateColumn({

@@ -5,20 +5,11 @@ import { AbstractEntity } from '@/database/entities/abstract.entity';
 import {
   Column,
   Entity,
-  JoinTable,
-  ManyToMany,
+  ManyToOne,
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
-
-export enum PermissionAction {
-  CREATE = 'create',
-  READ = 'read',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  MANAGE = 'manage',
-}
-
+import { ResourceEntity } from './resource.entity';
 @Entity('permissions')
 export class PermissionEntity extends AbstractEntity {
   @PrimaryGeneratedColumn('uuid', {
@@ -26,22 +17,21 @@ export class PermissionEntity extends AbstractEntity {
   })
   id!: Uuid;
 
-  @Column()
-  entity: string;
+  @ManyToOne(() => RoleEntity, (role) => role.permissions)
+  role: Relation<RoleEntity>;
 
-  @Column({
-    type: 'enum',
-    enum: PermissionAction,
-    array: true,
-    default: [],
-  })
-  actions: PermissionAction[];
+  @ManyToOne(() => ResourceEntity, (resource) => resource.permissions)
+  resource: Relation<ResourceEntity>;
 
-  @ManyToMany(() => RoleEntity, (role) => role.permissions)
-  @JoinTable({
-    name: 'role_permissions',
-    joinColumn: { name: 'permission_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'role_id', referencedColumnName: 'id' },
-  })
-  roles: Relation<RoleEntity[]>;
+  @Column({ type: 'boolean', default: false })
+  canCreate: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  canRead: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  canUpdate: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  canDelete: boolean;
 }
