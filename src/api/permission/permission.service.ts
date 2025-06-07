@@ -1,9 +1,17 @@
+import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
 import { Uuid } from '@/common/types/common.type';
+import { paginateList } from '@/utils/offset-list';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { RoleEntity } from '../role/entities/role.entity';
-import { CreatePermissionDto, UpdatePermissionDto } from './dto';
+import {
+  CreatePermissionDto,
+  ListPermissionReqDto,
+  UpdatePermissionDto,
+} from './dto';
+import { PermissionResDto } from './dto/permission.res.dto';
 import { PermissionEntity } from './entities/permission.entity';
 import { ResourceEntity } from './entities/resource.entity';
 
@@ -41,6 +49,34 @@ export class PermissionService {
 
   async findAll() {
     return this.permissionRepo.find({ relations: ['role', 'resource'] });
+  }
+
+  async findAllResource() {
+    return this.resourceRepo.find();
+  }
+
+  async findList(
+    reqDto: ListPermissionReqDto,
+  ): Promise<OffsetListDto<PermissionResDto>> {
+    const query = this.permissionRepo
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.role', 'role')
+      .leftJoinAndSelect('permission.resource', 'resource')
+      .orderBy('permission.createdAt', 'DESC');
+    const [permissions, count] = await paginateList<PermissionEntity>(
+      query,
+      reqDto,
+      {
+        skipCount: false,
+        takeAll: false,
+      },
+    );
+
+    return new OffsetListDto(
+      plainToInstance(PermissionResDto, permissions),
+      count,
+      reqDto,
+    );
   }
 
   async findByRole(roleId: Uuid) {

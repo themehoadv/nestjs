@@ -1,3 +1,4 @@
+import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
 import { Uuid } from '@/common/types/common.type';
 import { ApiPublic } from '@/decorators/http.decorators';
 import {
@@ -8,9 +9,16 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiParam, ApiTags } from '@nestjs/swagger';
-import { CreatePermissionDto, UpdatePermissionDto } from './dto';
+import {
+  CreatePermissionDto,
+  ListPermissionReqDto,
+  PermissionResDto,
+  UpdatePermissionDto,
+} from './dto';
+import {} from './dto/permission.res.dto';
 import { PermissionService } from './permission.service';
 
 @ApiTags('permissions')
@@ -27,16 +35,33 @@ export class PermissionController {
   }
 
   @ApiPublic()
-  @Get()
+  @Get('/all')
   findAll() {
     return this.permissionService.findAll();
   }
 
   @ApiPublic()
-  @ApiParam({ name: 'roleId', type: 'String' })
-  @Get('role/:roleId')
-  findByRole(@Param('roleId') roleId: Uuid) {
-    return this.permissionService.findByRole(roleId);
+  @Get('/resources')
+  findAllResource() {
+    return this.permissionService.findAllResource();
+  }
+
+  @Get()
+  @ApiPublic({
+    type: OffsetListDto<PermissionResDto>,
+    summary: 'List permissions',
+  })
+  async findPermissionList(
+    @Query() reqDto: ListPermissionReqDto,
+  ): Promise<OffsetListDto<PermissionResDto>> {
+    return await this.permissionService.findList(reqDto);
+  }
+
+  @ApiPublic()
+  @ApiParam({ name: 'permissionId', type: 'String' })
+  @Get('permission/:permissionId')
+  findByPermission(@Param('permissionId') permissionId: Uuid) {
+    return this.permissionService.findByRole(permissionId);
   }
 
   @ApiPublic()
