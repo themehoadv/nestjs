@@ -13,6 +13,7 @@ import compression from 'compression';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AuthService } from './api/auth/auth.service';
+import { PermissionService } from './api/permission/permission.service';
 import { AppModule } from './app.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { type AllConfigType } from './config/config.type';
@@ -71,9 +72,9 @@ async function bootstrap() {
   });
 
   app.useGlobalGuards(
-    new AuthGuard(reflector, app.get(AuthService)),
+    new AuthGuard(reflector, app.get(AuthService), app.get(PermissionService)),
     // new RolesGuard(reflector),
-    // new PermissionsGuard(reflector),
+    // new PermissionGuard(reflector),
   );
   app.useGlobalInterceptors(new ResponseInterceptor(reflector));
   app.useGlobalFilters(new GlobalExceptionFilter(configService));

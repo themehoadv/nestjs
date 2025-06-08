@@ -1,5 +1,8 @@
+import { Uuid } from '@/common/types/common.type';
+
 export type JwtPayloadType = {
-  id: string;
+  id: Uuid;
+  roleId: Uuid;
   iat: number;
   exp: number;
 };

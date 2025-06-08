@@ -1,6 +1,18 @@
 import { ErrorDto } from '@/common/dto/error.dto';
 import { createSuccessResponseType } from '@/common/dto/success-response.dto';
 import {
+  ACTION_KEY,
+  ApiAuthType,
+  ApiResponseType,
+  DEFAULT_ERROR_RESPONSES,
+  DEFAULT_PAGINATION_TYPE,
+  DEFAULT_STATUS_CODE,
+  PaginationType,
+  RESOURCE_KEY,
+  RESPONSE_CODE_KEY,
+  RESPONSE_MESSAGE_KEY,
+} from '@/constants/auth.constant';
+import {
   applyDecorators,
   HttpCode,
   HttpStatus,
@@ -20,15 +32,6 @@ import { STATUS_CODES } from 'http';
 import { Public } from './public.decorator';
 import { ApiPaginatedResponse } from './swagger.decorators';
 
-const DEFAULT_PAGINATION_TYPE: PaginationType = 'offset';
-const DEFAULT_STATUS_CODE = HttpStatus.OK;
-const RESPONSE_MESSAGE_KEY = 'responseMessage';
-const RESPONSE_CODE_KEY = 'responseCode';
-
-type ApiResponseType = number;
-type ApiAuthType = 'basic' | 'api-key' | 'jwt';
-type PaginationType = 'offset' | 'cursor';
-
 interface IApiOptions<T extends Type<any>> {
   type?: T; // Type của data (không phải của toàn bộ response)
   summary?: string;
@@ -38,6 +41,8 @@ interface IApiOptions<T extends Type<any>> {
   isPaginated?: boolean;
   paginationType?: PaginationType;
   successMessage?: string;
+  resource?: string;
+  action?: 'create' | 'read' | 'update' | 'delete';
 }
 
 type IApiPublicOptions<T extends Type<any>> = IApiOptions<T>;
@@ -46,20 +51,11 @@ interface IApiAuthOptions<T extends Type<any>> extends IApiOptions<T> {
   auths?: ApiAuthType[];
 }
 
-const DEFAULT_ERROR_RESPONSES: ApiResponseType[] = [
-  HttpStatus.BAD_REQUEST,
-  // HttpStatus.FORBIDDEN,
-  // HttpStatus.NOT_FOUND,
-  // HttpStatus.UNPROCESSABLE_ENTITY,
-  // HttpStatus.INTERNAL_SERVER_ERROR,
-];
-
 const createSuccessResponse = <T extends Type<any>>(options: {
   type?: T;
   description?: string;
   paginationType?: PaginationType;
 }) => {
-  // Nếu có type được truyền vào, wrap nó trong SuccessResponseDto
   const responseType = options.type
     ? createSuccessResponseType(options.type)
     : undefined;
@@ -94,7 +90,9 @@ export const ApiPublic = <T extends Type<any>>(
     statusCode = DEFAULT_STATUS_CODE,
     isPaginated = false,
     paginationType = DEFAULT_PAGINATION_TYPE,
-    successMessage = description, // Use description as fallback for success message
+    successMessage = description,
+    resource,
+    action,
   } = options;
 
   const successResponse = createSuccessResponse({
@@ -104,17 +102,26 @@ export const ApiPublic = <T extends Type<any>>(
   });
   const errorResponseDecorators = createErrorResponses(errorResponses);
 
-  return applyDecorators(
+  const decorators = [
     Public(),
-    SetMetadata(RESPONSE_MESSAGE_KEY, successMessage), // Store success message
-    SetMetadata(RESPONSE_CODE_KEY, statusCode), // Store status code
+    SetMetadata(RESPONSE_MESSAGE_KEY, successMessage),
+    SetMetadata(RESPONSE_CODE_KEY, statusCode),
     ApiOperation({ summary }),
     HttpCode(statusCode),
     isPaginated
       ? ApiPaginatedResponse(successResponse)
       : ApiOkResponse(successResponse),
     ...errorResponseDecorators,
-  );
+  ];
+
+  if (resource) {
+    decorators.push(SetMetadata(RESOURCE_KEY, resource));
+  }
+  if (action) {
+    decorators.push(SetMetadata(ACTION_KEY, action));
+  }
+
+  return applyDecorators(...decorators);
 };
 
 export const ApiAuth = <T extends Type<any>>(
@@ -129,7 +136,9 @@ export const ApiAuth = <T extends Type<any>>(
     isPaginated = false,
     paginationType = DEFAULT_PAGINATION_TYPE,
     auths = ['jwt'] as ApiAuthType[],
-    successMessage = description, // Use description as fallback for success message
+    successMessage = description,
+    resource,
+    action,
   } = options;
 
   const successResponse = createSuccessResponse({
@@ -146,15 +155,24 @@ export const ApiAuth = <T extends Type<any>>(
     successResponse,
   );
 
-  return applyDecorators(
-    SetMetadata(RESPONSE_MESSAGE_KEY, successMessage), // Store success message
-    SetMetadata(RESPONSE_CODE_KEY, statusCode), // Store status code
+  const decorators = [
+    SetMetadata(RESPONSE_MESSAGE_KEY, successMessage),
+    SetMetadata(RESPONSE_CODE_KEY, statusCode),
     ApiOperation({ summary }),
     HttpCode(statusCode),
     successResponseDecorator,
     ...authDecorators,
     ...errorResponseDecorators,
-  );
+  ];
+
+  if (resource) {
+    decorators.push(SetMetadata(RESOURCE_KEY, resource));
+  }
+  if (action) {
+    decorators.push(SetMetadata(ACTION_KEY, action));
+  }
+
+  return applyDecorators(...decorators);
 };
 
 // Helper functions
@@ -183,10 +201,4 @@ const getSuccessResponseDecorator = (
   return statusCode === HttpStatus.CREATED
     ? ApiCreatedResponse(successResponse)
     : ApiOkResponse(successResponse);
-};
-
-// Export metadata keys for use in interceptor
-export const API_RESPONSE_METADATA = {
-  MESSAGE: RESPONSE_MESSAGE_KEY,
-  CODE: RESPONSE_CODE_KEY,
 };

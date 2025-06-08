@@ -1,10 +1,12 @@
 import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
 import { Uuid } from '@/common/types/common.type';
+import { PermissionActionType } from '@/constants/auth.constant';
 import { paginateList } from '@/utils/offset-list';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
+import { JwtPayloadType } from '../auth/types/jwt-payload.type';
 import { RoleEntity } from '../role/entities/role.entity';
 import {
   CreatePermissionDto,
@@ -135,14 +137,15 @@ export class PermissionService {
   }
 
   async checkPermission(
-    roleId: Uuid,
-    resourceName: string,
-    action: 'create' | 'read' | 'update' | 'delete',
+    payload: JwtPayloadType,
+    resource: string,
+    action: PermissionActionType,
   ) {
+    // TOD: luu cache thay ve truy van database
     const permission = await this.permissionRepo.findOne({
       where: {
-        role: { id: roleId },
-        resource: { name: resourceName },
+        role: { id: payload.roleId },
+        resource: { name: resource },
       },
     });
 

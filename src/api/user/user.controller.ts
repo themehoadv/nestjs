@@ -1,5 +1,6 @@
 import { OffsetListDto } from '@/common/dto/offset-pagination/offset-list.dto';
 import { Uuid } from '@/common/types/common.type';
+import { PERMISSION_ACTION, RESOURCE_NAME } from '@/constants/auth.constant';
 import { CurrentUser } from '@/decorators/current-user.decorator';
 import { ApiAuth } from '@/decorators/http.decorators';
 import {
@@ -43,6 +44,8 @@ export class UserController {
     type: UserResDto,
     summary: 'Create user',
     statusCode: HttpStatus.CREATED,
+    resource: RESOURCE_NAME.USER,
+    action: PERMISSION_ACTION.CREATE,
   })
   async createUser(
     @Body() createUserDto: CreateUserReqDto,
@@ -52,6 +55,8 @@ export class UserController {
 
   @Get()
   @ApiAuth({
+    resource: RESOURCE_NAME.USER,
+    action: PERMISSION_ACTION.READ,
     type: OffsetListDto<UserResDto>,
     summary: 'List users',
   })
@@ -62,7 +67,12 @@ export class UserController {
   }
 
   @Get(':id')
-  @ApiAuth({ type: UserResDto, summary: 'Find user by id' })
+  @ApiAuth({
+    type: UserResDto,
+    summary: 'Find user by id',
+    resource: RESOURCE_NAME.USER,
+    action: PERMISSION_ACTION.READ,
+  })
   @ApiParam({ name: 'id', type: 'String' })
   async findUser(@Param('id', ParseUUIDPipe) id: Uuid): Promise<UserResDto> {
     return await this.userService.findOne(id);
@@ -78,7 +88,12 @@ export class UserController {
   }
 
   @Patch(':id')
-  @ApiAuth({ type: UserResDto, summary: 'Update user' })
+  @ApiAuth({
+    type: UserResDto,
+    summary: 'Update user',
+    resource: RESOURCE_NAME.USER,
+    action: PERMISSION_ACTION.UPDATE,
+  })
   @ApiParam({ name: 'id', type: 'String' })
   updateUser(
     @Param('id', ParseUUIDPipe) id: Uuid,
@@ -91,6 +106,8 @@ export class UserController {
   @ApiAuth({
     type: String,
     summary: 'Delete user',
+    resource: RESOURCE_NAME.USER,
+    action: PERMISSION_ACTION.DELETE,
   })
   @ApiParam({ name: 'id', type: 'String' })
   removeUser(@Param('id', ParseUUIDPipe) id: Uuid): Promise<string> {

@@ -20,7 +20,7 @@ export class CreateUserReqDto {
   @PasswordField({ example: '123456789user' })
   password: string;
 
-  @UUIDField({ example: 'ae389ea4-3106-4865-aee4-820bd21edb7d' })
+  @UUIDField({ example: 'c00ad719-557f-4440-8695-39ac28798703' })
   roleId: Uuid;
 
   @StringFieldOptional({ example: "I'm a backend developer" })

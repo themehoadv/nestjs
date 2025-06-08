@@ -1,4 +1,4 @@
-import { API_RESPONSE_METADATA } from '@/decorators/http.decorators';
+import { API_RESPONSE_METADATA } from '@/constants/auth.constant';
 import {
   CallHandler,
   ExecutionContext,
