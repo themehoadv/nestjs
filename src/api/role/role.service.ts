@@ -59,15 +59,27 @@ export class RoleService {
   }
 
   async findAll(): Promise<RoleResDto[]> {
-    const roles = await RoleEntity.find();
+    const roles = await RoleEntity.find({
+      relations: {
+        permissions: {
+          resource: true, // If you need resource details too
+        },
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
 
     return plainToInstance(RoleResDto, roles);
   }
 
   async findList(reqDto: ListRoleReqDto): Promise<OffsetListDto<RoleResDto>> {
     const query = this.roleRepository
-      .createQueryBuilder('user')
-      .orderBy('user.createdAt', 'DESC');
+      .createQueryBuilder('role')
+      .leftJoinAndSelect('role.permissions', 'permissions')
+      .leftJoinAndSelect('permissions.resource', 'resource')
+      .orderBy('role.createdAt', 'DESC');
+
     const [roles, count] = await paginateList<RoleEntity>(query, reqDto, {
       skipCount: false,
       takeAll: false,

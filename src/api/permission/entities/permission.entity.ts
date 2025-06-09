@@ -5,6 +5,7 @@ import { AbstractEntity } from '@/database/entities/abstract.entity';
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   Relation,
@@ -17,9 +18,19 @@ export class PermissionEntity extends AbstractEntity {
   })
   id!: Uuid;
 
+  @JoinColumn({
+    name: 'role_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'FK_permission_role_id',
+  })
   @ManyToOne(() => RoleEntity, (role) => role.permissions)
   role: Relation<RoleEntity>;
 
+  @JoinColumn({
+    name: 'resource_id',
+    referencedColumnName: 'id',
+    foreignKeyConstraintName: 'FK_permission_resource_id',
+  })
   @ManyToOne(() => ResourceEntity, (resource) => resource.permissions)
   resource: Relation<ResourceEntity>;
 

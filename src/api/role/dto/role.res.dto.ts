@@ -1,4 +1,6 @@
+import { PermissionResDto } from '@/api/permission/dto';
 import { Uuid } from '@/common/types/common.type';
+import { WrapperType } from '@/common/types/types';
 import {
   ClassField,
   StringField,
@@ -23,6 +25,10 @@ export class RoleResDto {
   @StringField()
   @Expose()
   remark: string;
+
+  @ClassField(() => PermissionResDto)
+  @Expose()
+  permissions?: WrapperType<PermissionResDto[]>;
 
   @ClassField(() => Date)
   @Expose()

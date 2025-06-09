@@ -5,7 +5,7 @@ import {
   Column,
   DeleteDateColumn,
   Entity,
-  ManyToMany,
+  OneToMany,
   PrimaryGeneratedColumn,
   Relation,
 } from 'typeorm';
@@ -24,7 +24,7 @@ export class RoleEntity extends AbstractEntity {
   @Column({ type: 'text', nullable: true })
   remark?: string;
 
-  @ManyToMany(() => PermissionEntity, (permission) => permission.role)
+  @OneToMany(() => PermissionEntity, (permission) => permission.role)
   permissions: Relation<PermissionEntity[]>;
 
   @DeleteDateColumn({

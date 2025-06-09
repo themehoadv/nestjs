@@ -2,15 +2,12 @@ import { RoleEntity } from '@/api/role/entities/role.entity';
 import { UserEntity } from '@/api/user/entities/user.entity';
 import { RoleType } from '@/constants/role-type';
 import { DataSource } from 'typeorm';
-import { Seeder, SeederFactoryManager } from 'typeorm-extension';
+import { Seeder } from 'typeorm-extension';
 
 export class UserSeeder1722335726360 implements Seeder {
   track = false;
 
-  public async run(
-    dataSource: DataSource,
-    factoryManager: SeederFactoryManager,
-  ): Promise<any> {
+  public async run(dataSource: DataSource): Promise<any> {
     const userRepository = dataSource.getRepository(UserEntity);
     const roleRepository = dataSource.getRepository(RoleEntity);
 
@@ -38,9 +35,9 @@ export class UserSeeder1722335726360 implements Seeder {
       );
     }
 
-    const userFactory = factoryManager.get(UserEntity);
-    await userFactory.saveMany(5, {
-      roleId: userRole.id,
-    });
+    // const userFactory = factoryManager.get(UserEntity);
+    // await userFactory.saveMany(5, {
+    //   roleId: userRole.id,
+    // });
   }
 }
